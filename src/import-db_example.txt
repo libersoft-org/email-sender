@@ -1,0 +1,3 @@
+john@doe.com
+jane@smith.org
+test@something.net

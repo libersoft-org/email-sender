@@ -1,0 +1,6 @@
+src/settings.json
+src/*.log
+src/mailsender
+bin/
+.git/
+.secret_git

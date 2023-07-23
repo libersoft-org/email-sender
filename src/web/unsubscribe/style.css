@@ -1,0 +1,68 @@
+body {
+ margin: 0;
+ font-family: Arial, Helvetica, sans-serif;
+ background-color: #F0F0F0;
+}
+
+input {
+ width: 240px;
+ margin-bottom: 20px;
+ padding: 10px;
+ text-align: center;
+ font-size: 12pt;
+ border: 1px solid #808080;
+ border-radius: 10px;
+ color: #000000;
+}
+
+#content {
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ transform: translate(-50%, -50%);
+ max-width: 300px;
+ padding: 20px;
+ border: 1px solid #B0B0B0;
+ border-radius: 10px;
+ background-color: #FFFFFF;
+ text-align: center;
+}
+
+#label {
+ font-weight: bold;
+ margin-bottom: 20px;
+}
+
+#message {
+ margin: 20px 0px;
+ font-weight: bold;
+}
+
+#message.red {
+ color: #FF0000;
+}
+
+#message.orange {
+ color: #FF6000;
+}
+
+#message.green {
+ color: #008000;
+}
+
+.button {
+ display: block;
+ margin: 0 auto;
+ width: 150px;
+ padding: 10px 20px;
+ font-size: 16px;
+ font-weight: bold;
+ cursor: pointer;
+ border-radius: 10px;
+ color: #FFFFFF;
+ background-color: #0060FF;
+}
+
+.shadow {
+ box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.3);
+}

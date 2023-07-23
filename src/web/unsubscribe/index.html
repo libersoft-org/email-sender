@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <title>Unsubscribe e-mail</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="./style.css">
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <script src="./functions.js"></script>
+ </head>
+ <body>
+  <div id ="content" class="shadow">
+   <div id="label">Enter your e-mail address you would like to unsubscribe:</div>
+   <input id="email" type="email" placeholder="Your e-mail address" onkeydown="enterPressed()" />
+   <div class="button shadow" onclick="unsubscribe()">Unsubscribe</div>
+   <div id="message"></div>
+  </div>
+ </body>
+</html>

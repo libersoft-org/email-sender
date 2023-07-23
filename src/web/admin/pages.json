@@ -1,0 +1,26 @@
+{
+ "campaigns": {
+  "menu": true,
+  "label": "Campaigns"
+ },
+ "databases": {
+  "menu": true,
+  "label": "Databases"
+ },
+ "links": {
+  "menu": true,
+  "label": "Links"
+ },
+ "servers": {
+  "menu": true,
+  "label": "Servers"
+ },
+ "queue": {
+  "menu": true,
+  "label": "Queue"
+ },
+ "notfound": {
+  "menu": false,
+  "label": "Page not found"
+ }
+}
