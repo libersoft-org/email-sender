@@ -23,7 +23,7 @@
   - campaigns, databases, servers, short links, queue - add paging to API and frontend
 
 ## DB import
-- remove this script after it's in campaign management UI
+- remove this script after it's in campaign management UI (remove from README.md and INSTALL.md too)
 - move data from "import-db_example.txt" to input box in campaign management UI
 
 ## Other
