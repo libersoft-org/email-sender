@@ -19,6 +19,7 @@
     - fix scrollbar in modal body
     - fix max-width
   - add mobile responsive design
+  - when scrolled down and then clicked on something that shows modal, then modal appears at the top of the page
   - campaigns, databases, servers, short links, queue - add paging to API and frontend
 
 ## DB import
