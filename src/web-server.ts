@@ -29,6 +29,7 @@ function processAPI(router: Router) {
  router.post('/api/admin/add_campaign', async (ctx: any) => await apiAdminAddCampaign(ctx));
  router.post('/api/admin/delete_campaign', async (ctx: any) => await apiAdminDeleteCampaign(ctx));
  router.post('/api/admin/get_databases', async (ctx: any) => await apiAdminGetDatabases(ctx));
+ router.post('/api/admin/add_database', async (ctx: any) => await apiAdminAddDatabase(ctx));
  router.post('/api/admin/delete_database', async (ctx: any) => await apiAdminDeleteDatabase(ctx));
  router.post('/api/admin/get_servers', async (ctx: any) => await apiAdminGetServers(ctx));
  router.post('/api/admin/add_server', async (ctx: any) => await apiAdminAddServer(ctx));
@@ -55,12 +56,12 @@ async function apiUnsubscribe(ctx: any) {
  if (!body.email) return { type: 2, message: 'No e-mail address provided.' };
  if (await isEmailUnsubscribed(body.email)) ctx.response.body = { type: 1, message: 'This e-mail is already unsubscribed.' };
  if (!(await isEmailInDatabase(body.email))) ctx.response.body = { type: 2, message: 'This e-mail is not in our database.' };
- await dbQuery('INSERT INTO unsubscribed (email, ip) VALUES (?, ?)', [body.email, ctx.request.ip]);
+ await dbQuery('INSERT INTO unsubscribed (email, ip) VALUES (?, ?)', [ body.email, ctx.request.ip ]);
  ctx.response.body = { type: 0, message: 'Your e-mail has been successfully unsubscribed.' }
 }
 
 async function isEmailUnsubscribed(email: string) {
- const unsub: any = await dbQuery('SELECT email FROM unsubscribed WHERE email = ?', [email]);
+ const unsub: any = await dbQuery('SELECT email FROM unsubscribed WHERE email = ?', [ email ]);
  if (unsub != null) return unsub.length > 0;
  else return false;
 }
@@ -70,7 +71,7 @@ async function isEmailInDatabase(email: string) {
  if (tables != null) {
   for (const tableObject of tables) {
    const table = tableObject['Tables_in_mail (recipients_%)'];
-   const exists: any = await dbQuery('SELECT email FROM ?? WHERE email = ?', [table, email]);
+   const exists: any = await dbQuery('SELECT email FROM ?? WHERE email = ?', [ table, email ]);
    if (exists.length > 0) return true;
   }
   return false;
@@ -102,21 +103,34 @@ async function apiAdminGetDatabases(ctx: any) {
  const dbs = [];
  for (let i = 0; i < databases.length; i++) {
   for (let k in databases[i]) {
-   const count = await dbQuery('SELECT COUNT(*) AS cnt FROM ' + databases[i][k]);
+   const count = await dbQuery('SELECT COUNT(*) AS cnt FROM ??', [ databases[i][k] ]);
    dbs.push({ database: databases[i][k].substring(11), count: count[0].cnt });
   }
  }
  ctx.response.body = dbs;
 }
 
+async function apiAdminAddDatabase(ctx: any) {
+ if (ctx.request.body().type === 'json') {
+  const req = await ctx.request.body().value;
+  if (req.hasOwnProperty('name') && req.name != '') {
+   const regex = /^[a-z0-9_]+$/;
+   if (regex.test(req.name)) {
+    await dbQuery('CALL createRecipientsTable(?)', [ req.name ]);
+    ctx.response.body = { status: 1, message: 'Database added' };
+   } else ctx.response.body = { status: 2, message: 'Database name can contain only lower case letters of English alphabet and underscores' };
+  } else  ctx.response.body = { status: 2, message: 'Database name not defined' };
+ } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
+}
+
 async function apiAdminDeleteDatabase(ctx: any) {
  if (ctx.request.body().type === 'json') {
   const req = await ctx.request.body().value;
-  if (req.hasOwnProperty('name')) {
-   const tables = await dbQuery('SHOW TABLES WHERE Tables_in_' + settings.mysql.database + ' LIKE "recipients_' + req.name + '"');
+  if (req.hasOwnProperty('name') && req.name != '') {
+   const tables = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.name ]);
    if (tables.length == 1) {
     try {
-     await dbQuery('DROP TABLE recipients_' + req.name);
+     await dbQuery('DROP TABLE ??', [ 'recipients_' + req.name ]);
      ctx.response.body = { status: 1, message: 'Database deleted' };
     } catch {
      ctx.response.body = { status: 2, message: 'Unable to delete this database' };
@@ -156,13 +170,13 @@ async function apiAdminAddServer(ctx: any) {
 async function apiAdminDeleteCampaign(ctx: any) {
  if (ctx.request.body().type === 'json') {
   const req = await ctx.request.body().value;
-  if (req.hasOwnProperty('id')) {
-   const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', req.id.toString());
+  if (req.hasOwnProperty('id') && req.id != '') {
+   const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.id.toString() ]);
    if (cnt[0].cnt == 1) {
-    const cnt_queue = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', req.id.toString());
+    const cnt_queue = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.id.toString() ]);
     if (cnt_queue[0].cnt == 0) {
      try {
-      await dbQuery('DELETE FROM campaigns WHERE id = ?', req.id.toString());
+      await dbQuery('DELETE FROM campaigns WHERE id = ?', [ req.id.toString() ]);
       ctx.response.body = { status: 1, message: 'Campaign deleted' };
      } catch {
       ctx.response.body = { status: 2, message: 'Unable to delete this campaign' };
@@ -176,13 +190,13 @@ async function apiAdminDeleteCampaign(ctx: any) {
 async function apiAdminDeleteServer(ctx: any) {
  if (ctx.request.body().type === 'json') {
   const req = await ctx.request.body().value;
-  if (req.hasOwnProperty('id')) {
-   const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', req.id.toString());
+  if (req.hasOwnProperty('id') && req.id != '') {
+   const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.id.toString() ]);
    if (cnt[0].cnt == 1) {
-    const cnt_campaigns = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id_server = ?', req.id.toString());
+    const cnt_campaigns = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id_server = ?', [ req.id.toString() ]);
     if (cnt_campaigns[0].cnt == 0) {
      try {
-      await dbQuery('DELETE FROM servers WHERE id = ?', req.id.toString());
+      await dbQuery('DELETE FROM servers WHERE id = ?', [ req.id.toString() ]);
       ctx.response.body = { status: 1, message: 'Server deleted' };
      } catch {
       ctx.response.body = { status: 2, message: 'Unable to delete this server' };

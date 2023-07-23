@@ -221,6 +221,16 @@ async function deleteCampaign(id) {
  } else document.querySelector('.modal .body').innerHTML = res.message;
 }
 
+async function addDatabase() {
+ const values = { name: document.querySelector('.modal .body #form-name').value }
+ document.querySelector('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/add_database', values);
+ if (res.status == 1) {
+  modalClose();
+  getPage('databases');
+ } else document.querySelector('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
 async function deleteDatabaseModal(name) {
  await getModal('Delete database', await getFileContent('html/temp-databases-delete.html'));
  const body = document.querySelector('.modal .body');

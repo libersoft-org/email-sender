@@ -10,7 +10,7 @@
 ## Web Server script
 - campaign management UI:
   - campaigns (edit, duplicate)
-  - databases (add, import)
+  - databases (import)
   - servers (edit, duplicate)
   - links + visits + other stats data (view, add, edit, delete)
   - send queue (view, delete - based on campaign or everything)
@@ -22,6 +22,7 @@
   - admin API - add login / logout + token
   - add mobile responsive design
   - campaigns, databases, servers, short links, queue - add paging to API and frontend
+  - modal - close on escape, confirm on enter, autofocus the first input
 
 ## DB import
 - remove this script after it's in campaign management UI
