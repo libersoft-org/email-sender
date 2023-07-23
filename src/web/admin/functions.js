@@ -163,9 +163,12 @@ async function addCampaign() {
   subject: document.querySelector('.modal .body #form-subject').value,
   body: document.querySelector('.modal .body #form-body').value
  }
- document.querySelector('.modal .body').innerHTML = getLoader();
+ document.querySelector('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/add_campaign', values);
- console.log(res);
+ if (res.status == 1) {
+  modalClose();
+  getPage('campaigns');
+ } else document.querySelector('.modal .body .error').innerHTML = 'Error: ' + res.message;
 }
 
 async function sendCampaignModal(id, name) {

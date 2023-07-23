@@ -26,12 +26,7 @@ async function loadWebServer() {
 function processAPI(router: Router) {
  router.post('/api/unsubscribe', async (ctx: any) => await apiUnsubscribe(ctx));
  router.post('/api/admin/get_campaigns', async (ctx: any) => await apiAdminGetCampaigns(ctx));
- /*
- router.post('/api/admin/create_campaign', async (ctx: any) => {
-  // const campaign = await createCampaign(context.request.body);
-  ctx.response.body = { status: 1, message: 'Campaign created' };
- });
- */
+ router.post('/api/admin/add_campaign', async (ctx: any) => await apiAdminAddCampaign(ctx));
  router.post('/api/admin/delete_campaign', async (ctx: any) => await apiAdminDeleteCampaign(ctx));
  router.post('/api/admin/get_databases', async (ctx: any) => await apiAdminGetDatabases(ctx));
  router.post('/api/admin/delete_database', async (ctx: any) => await apiAdminDeleteDatabase(ctx));
@@ -85,6 +80,21 @@ async function isEmailInDatabase(email: string) {
 async function apiAdminGetCampaigns(ctx: any) {
  const campaigns = await dbQuery('SELECT c.id, c.name, c.id_server, s.server, c.subject, c.body, c.created FROM campaigns c, servers s WHERE s.id = c.id_server ORDER BY c.id DESC');
  ctx.response.body = campaigns;
+}
+
+async function apiAdminAddCampaign(ctx: any) {
+ if (ctx.request.body().type === 'json') {
+  const req = await ctx.request.body().value;
+  if (req.hasOwnProperty('name') && req.name != '') {
+   if (req.hasOwnProperty('id_server') && req.id_server != '') {
+    const res = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.id_server ]);
+    if (res[0].cnt == 1) {
+     await dbQuery('INSERT INTO campaigns (name, id_server, visible_name, subject, body) VALUES (?, ?, ?, ?, ?)', [ req.name, req.id_server, (req.visible_name == '' ? null : req.visible_name), (req.subject == '' ? null : req.subject), (req.body == '' ? null : req.body) ]);
+     ctx.response.body = { status: 1, message: 'New campaign added' }
+    } else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' };
+   } else ctx.response.body = { status: 2, message: 'Server ID is missing' }; 
+  } else ctx.response.body = { status: 2, message: 'Campaign name is missing' };
+ } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
 }
 
 async function apiAdminGetDatabases(ctx: any) {
