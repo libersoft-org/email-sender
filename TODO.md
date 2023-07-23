@@ -1,11 +1,9 @@
 # TODO:
 
-## Database
-- add a footer column to server table (for unsubscribe link)
-
 ## Mail Sender script
 - disable INFO log level on dbConnect and dbDisconnect
 - automated link rewriter with stats in web UI
+- replace {UNSUBSCRIBE} in mail body in queue to what is in servers.footer column based on which server is used by campaign
 
 ## Web Server script
 - campaign management UI:
