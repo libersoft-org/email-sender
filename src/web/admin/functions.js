@@ -143,18 +143,6 @@ async function addCampaignModal() {
  }
 }
 
-async function addDatabaseModal() {
- await getModal('New database', await getFileContent('html/temp-databases-add.html'));
-}
-
-async function addLinkModal() {
- await getModal('New link', await getFileContent('html/temp-links-add.html'));
-}
-
-async function addServerModal() {
- await getModal('New server', await getFileContent('html/temp-servers-add.html'));
-}
-
 async function addCampaign() {
  const values = {
   name: document.querySelector('.modal .body #form-name').value,
@@ -224,10 +212,33 @@ async function deleteCampaign(id) {
  } else document.querySelector('.modal .body').innerHTML = res.message;
 }
 
+async function addDatabaseModal() {
+ await getModal('New database', await getFileContent('html/temp-databases-add.html'));
+}
+
 async function addDatabase() {
  const values = { name: document.querySelector('.modal .body #form-name').value }
  document.querySelector('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/add_database', values);
+ if (res.status == 1) {
+  modalClose();
+  getPage('databases');
+ } else document.querySelector('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
+async function editDatabaseModal(name) {
+ await getModal('Edit database', await getFileContent('html/temp-databases-edit.html'));
+ const body = document.querySelector('.modal .body');
+ body.innerHTML = body.innerHTML.replaceAll('{NAME}', name);
+}
+
+async function editDatabase() {
+ const values = {
+  name: document.querySelector('.modal .body #form-name').value,
+  name_old: document.querySelector('.modal .body #form-name-old').value
+ }
+ document.querySelector('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/edit_database', values);
  if (res.status == 1) {
   modalClose();
   getPage('databases');
@@ -247,6 +258,14 @@ async function deleteDatabase(name) {
   modalClose();
   getPage('databases');
  } else document.querySelector('.modal .body').innerHTML = res.message;
+}
+
+async function addLinkModal() {
+ await getModal('New link', await getFileContent('html/temp-links-add.html'));
+}
+
+async function addServerModal() {
+ await getModal('New server', await getFileContent('html/temp-servers-add.html'));
 }
 
 async function addServer() {

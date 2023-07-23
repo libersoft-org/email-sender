@@ -31,6 +31,7 @@ function processAPI(router: Router) {
  router.post('/api/admin/delete_campaign', async (ctx: any) => await apiAdminDeleteCampaign(ctx));
  router.post('/api/admin/get_databases', async (ctx: any) => await apiAdminGetDatabases(ctx));
  router.post('/api/admin/add_database', async (ctx: any) => await apiAdminAddDatabase(ctx));
+ router.post('/api/admin/edit_database', async (ctx: any) => await apiAdminEditDatabase(ctx));
  router.post('/api/admin/delete_database', async (ctx: any) => await apiAdminDeleteDatabase(ctx));
  router.post('/api/admin/get_servers', async (ctx: any) => await apiAdminGetServers(ctx));
  router.post('/api/admin/add_server', async (ctx: any) => await apiAdminAddServer(ctx));
@@ -136,6 +137,24 @@ async function apiAdminAddDatabase(ctx: any) {
     ctx.response.body = { status: 1, message: 'Database added' };
    } else ctx.response.body = { status: 2, message: 'Database name can contain only lower case letters of English alphabet and underscores' };
   } else  ctx.response.body = { status: 2, message: 'Database name not defined' };
+ } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
+}
+
+async function apiAdminEditDatabase(ctx: any) {
+ if (ctx.request.body().type === 'json') {
+  const req = await ctx.request.body().value;
+  if (req.hasOwnProperty('name') && req.name != '') {
+   if (req.hasOwnProperty('name_old') && req.name_old != '') {
+    const table = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.name_old ]);
+    if (table.length == 1) {
+     const regex = /^[a-z0-9_]+$/;
+     if (regex.test(req.name)) {
+      await dbQuery('RENAME TABLE ?? TO ??', [ 'recipients_' + req.name_old, 'recipients_' + req.name ]);
+      ctx.response.body = { status: 1, message: 'Database name changed' };
+     } else ctx.response.body = { status: 2, message: 'New database name can contain only lower case letters of English alphabet and underscores' };
+    } else ctx.response.body = { status: 2, message: 'The old database with this name not found' };
+   } else ctx.response.body = { status: 2, message: 'Old database name not defined' };
+  } else  ctx.response.body = { status: 2, message: 'New database name not defined' };
  } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
 }
 
