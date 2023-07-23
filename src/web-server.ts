@@ -34,8 +34,10 @@ function processAPI(router: Router) {
  router.post('/api/admin/edit_database', async (ctx: any) => await apiAdminEditDatabase(ctx));
  router.post('/api/admin/delete_database', async (ctx: any) => await apiAdminDeleteDatabase(ctx));
  router.post('/api/admin/get_servers', async (ctx: any) => await apiAdminGetServers(ctx));
+ router.post('/api/admin/get_server', async (ctx: any) => await apiAdminGetServer(ctx));
  router.post('/api/admin/add_server', async (ctx: any) => await apiAdminAddServer(ctx));
  router.post('/api/admin/copy_server', async (ctx: any) => await apiAdminCopyServer(ctx));
+ router.post('/api/admin/edit_server', async (ctx: any) => await apiAdminEditServer(ctx));
  router.post('/api/admin/delete_server', async (ctx: any) => await apiAdminDeleteServer(ctx));
 }
 
@@ -177,8 +179,19 @@ async function apiAdminDeleteDatabase(ctx: any) {
 
 
 async function apiAdminGetServers(ctx: any) {
- const servers = await dbQuery('SELECT id, server, email, created FROM servers ORDER BY id DESC');
- ctx.response.body = servers;
+ if (ctx.request.body().type === 'json') {
+  const req = await ctx.request.body().value;
+  if (req.hasOwnProperty('id') && req.id != '') {
+   const server = await dbQuery('SELECT id, server, email, created FROM servers ORDER BY id DESC');
+   if (server.length == 1) ctx.response.body = { status: 1, data: server };
+   else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' };
+  } else ctx.response.body = { status: 2, message: 'Server ID is missing' };
+ } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
+}
+
+async function apiAdminGetServer(ctx: any) {
+ const server = await dbQuery('SELECT server, email, created FROM servers WHERE id = ?', [ req.id ]);
+ ctx.response.body = server;
 }
 
 async function apiAdminAddServer(ctx: any) {
@@ -213,6 +226,30 @@ async function apiAdminCopyServer(ctx: any) {
     ctx.response.body = { status: 1, message: 'Server successfully copied' };
    } else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' };
   } else ctx.response.body = { status: 2, message: 'Server ID is missing' };
+ } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
+}
+
+async function apiAdminEditServer(ctx: any) {
+ if (ctx.request.body().type === 'json') {
+  const req = await ctx.request.body().value;
+  if (req.hasOwnProperty('hostname') && req.hostname != '') {
+   if (req.hasOwnProperty('port') && req.port != '') {
+    const port = parseInt(req.port);
+    if (Number.isInteger(port)) {
+     if (port >= 0 && port <= 65535) {
+      if (req.hasOwnProperty('email') && req.email != '') {
+       if (req.hasOwnProperty('link') && req.link != '') {
+        const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.id ]);
+        if (resCount[0].cnt == 1) {
+         await dbQuery('INSERT INTO servers (server, port, secure, auth_user, auth_pass, email, link, footer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ req.hostname, port, (req.secure == '1' ? true : false), (req.user == '' ? null : req.user), (req.password == '' ? null : req.password), req.email, req.link, (req.footer == '' ? null : req.footer) ]);
+         ctx.response.body = { status: 1, message: 'New server added' }
+        } else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' }; 
+       } else ctx.response.body = { status: 2, message: 'Web address for links address is missing' };
+      } else ctx.response.body = { status: 2, message: 'E-mail address is missing' };
+     } else ctx.response.body = { status: 2, message: 'Server port has to be in range of 0 - 65535' };
+    } else ctx.response.body = { status: 2, message: 'Server port has to be a whole number' };
+   } else ctx.response.body = { status: 2, message: 'Server port is missing' }; 
+  } else ctx.response.body = { status: 2, message: 'Server hostname is missing' };
  } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
 }
 

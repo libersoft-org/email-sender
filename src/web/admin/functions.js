@@ -302,6 +302,38 @@ async function copyServer(id) {
  } else document.querySelector('.modal .body').innerHTML = res.message;
 }
 
+async function editServerModal(id) {
+ // TODO get info from api
+ 
+ let temp = await getFileContent('html/temp-servers-edit.html')
+ const server_html = translate(temp, {
+  '{ID}': id,
+  '{NAME}': page == 'about' ? '' : page,
+  '{LABEL}': pages[page].label
+ });
+ await getModal('Edit server', server_html);
+}
+
+async function editServer() {
+ const values = {
+  id: document.querySelector('.modal .body #form-id').value,
+  hostname: document.querySelector('.modal .body #form-hostname').value,
+  port: document.querySelector('.modal .body #form-port').value,
+  secure: document.querySelector('.modal .body #form-secure').value,
+  user: document.querySelector('.modal .body #form-user').value,
+  password: document.querySelector('.modal .body #form-password').value,
+  email: document.querySelector('.modal .body #form-email').value,
+  link: document.querySelector('.modal .body #form-link').value,
+  footer: document.querySelector('.modal .body #form-footer').value
+ }
+ document.querySelector('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/edit_server', values);
+ if (res.status == 1) {
+  modalClose();
+  getPage('servers');
+ } else document.querySelector('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
 async function deleteServerModal(id, name) {
  await getModal('Delete server', await getFileContent('html/temp-servers-delete.html'));
  const body = document.querySelector('.modal .body');
