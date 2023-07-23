@@ -257,7 +257,8 @@ async function addServer() {
   user: document.querySelector('.modal .body #form-user').value,
   password: document.querySelector('.modal .body #form-password').value,
   email: document.querySelector('.modal .body #form-email').value,
-  link: document.querySelector('.modal .body #form-link').value
+  link: document.querySelector('.modal .body #form-link').value,
+  footer: document.querySelector('.modal .body #form-footer').value
  }
  document.querySelector('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/add_server', values);
@@ -265,6 +266,21 @@ async function addServer() {
   modalClose();
   getPage('servers');
  } else document.querySelector('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
+async function copyServerModal(id, name) {
+ await getModal('Copy server', await getFileContent('html/temp-servers-copy.html'));
+ const body = document.querySelector('.modal .body');
+ body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
+}
+
+async function copyServer(id) {
+ document.querySelector('.modal .body').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/copy_server', { id: id });
+ if (res.status == 1) {
+  modalClose();
+  getPage('servers');
+ } else document.querySelector('.modal .body').innerHTML = res.message;
 }
 
 async function deleteServerModal(id, name) {

@@ -9,9 +9,9 @@
 
 ## Web Server script
 - campaign management UI:
-  - campaigns (edit, duplicate)
+  - campaigns (edit)
   - databases (rename (edit), import)
-  - servers (edit, duplicate)
+  - servers (edit)
   - links + visits + other stats data (view, add, edit, delete)
   - send queue (view, delete - based on campaign or everything)
   - modal window:
@@ -30,4 +30,5 @@
 
 ## Other
 - add some more screenshots to README.md
+- add undeliverable script connected to mailbox
 - implement list unsubscribe and feedback loop (add to headers and create a script that checks the mailbox for FBL / LU reports)
