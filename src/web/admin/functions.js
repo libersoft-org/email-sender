@@ -272,13 +272,14 @@ async function addServer() {
  const values = {
   hostname: document.querySelector('.modal .body #form-hostname').value,
   port: document.querySelector('.modal .body #form-port').value,
-  secure: document.querySelector('.modal .body #form-secure').value,
+  secure: document.querySelector('.modal .body #form-secure').checked,
   user: document.querySelector('.modal .body #form-user').value,
   password: document.querySelector('.modal .body #form-password').value,
   email: document.querySelector('.modal .body #form-email').value,
   link: document.querySelector('.modal .body #form-link').value,
   footer: document.querySelector('.modal .body #form-footer').value
  }
+ console.log(values);
  document.querySelector('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/add_server', values);
  if (res.status == 1) {
@@ -304,22 +305,31 @@ async function copyServer(id) {
 
 async function editServerModal(id) {
  // TODO get info from api
- 
- let temp = await getFileContent('html/temp-servers-edit.html')
- const server_html = translate(temp, {
+ const temp = await getFileContent('html/temp-servers-edit.html')
+ const res = await getAPI('/api/admin/get_server', { id: id });
+ if (res.status == 1) {
+  const server_html = translate(temp, {
   '{ID}': id,
-  '{NAME}': page == 'about' ? '' : page,
-  '{LABEL}': pages[page].label
- });
- await getModal('Edit server', server_html);
+  '{HOSTNAME}': res.data[0].server,
+  '{PORT}': res.data[0].port,
+  '{SECURE}': res.data[0].secure == 1 ? 'checked' : '',
+  '{USER}': res.data[0].auth_user ? res.data[0].auth_user : '',
+  '{PASSWORD}': res.data[0].auth_pass ? res.data[0].auth_pass : '',
+  '{EMAIL}': res.data[0].email,
+  '{LINK}': res.data[0].link,
+  '{FOOTER}': res.data[0].footer,
+  });
+  await getModal('Edit server', server_html);
+ } else await getModal('Edit server', '<div class="error">' + res.message + '</div>');
 }
 
 async function editServer() {
+ console.log(document.querySelector('.modal .body #form-secure').checked);
  const values = {
   id: document.querySelector('.modal .body #form-id').value,
   hostname: document.querySelector('.modal .body #form-hostname').value,
   port: document.querySelector('.modal .body #form-port').value,
-  secure: document.querySelector('.modal .body #form-secure').value,
+  secure: document.querySelector('.modal .body #form-secure').checked,
   user: document.querySelector('.modal .body #form-user').value,
   password: document.querySelector('.modal .body #form-password').value,
   email: document.querySelector('.modal .body #form-email').value,
@@ -328,6 +338,7 @@ async function editServer() {
  }
  document.querySelector('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/edit_server', values);
+ console.log(res);
  if (res.status == 1) {
   modalClose();
   getPage('servers');

@@ -179,19 +179,19 @@ async function apiAdminDeleteDatabase(ctx: any) {
 
 
 async function apiAdminGetServers(ctx: any) {
+ const servers = await dbQuery('SELECT id, server, email, created FROM servers ORDER BY id DESC');
+ ctx.response.body = servers;
+}
+
+async function apiAdminGetServer(ctx: any) {
  if (ctx.request.body().type === 'json') {
   const req = await ctx.request.body().value;
   if (req.hasOwnProperty('id') && req.id != '') {
-   const server = await dbQuery('SELECT id, server, email, created FROM servers ORDER BY id DESC');
+   const server = await dbQuery('SELECT server, port, secure, auth_user, auth_pass, email, link, footer, created FROM servers WHERE id = ?', [ req.id ]);
    if (server.length == 1) ctx.response.body = { status: 1, data: server };
    else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' };
   } else ctx.response.body = { status: 2, message: 'Server ID is missing' };
  } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
-}
-
-async function apiAdminGetServer(ctx: any) {
- const server = await dbQuery('SELECT server, email, created FROM servers WHERE id = ?', [ req.id ]);
- ctx.response.body = server;
 }
 
 async function apiAdminAddServer(ctx: any) {
@@ -204,7 +204,7 @@ async function apiAdminAddServer(ctx: any) {
      if (port >= 0 && port <= 65535) {
       if (req.hasOwnProperty('email') && req.email != '') {
        if (req.hasOwnProperty('link') && req.link != '') {
-        await dbQuery('INSERT INTO servers (server, port, secure, auth_user, auth_pass, email, link, footer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ req.hostname, port, (req.secure == '1' ? true : false), (req.user == '' ? null : req.user), (req.password == '' ? null : req.password), req.email, req.link, (req.footer == '' ? null : req.footer) ]);
+        await dbQuery('INSERT INTO servers (server, port, secure, auth_user, auth_pass, email, link, footer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ req.hostname, port, req.secure, (req.user == '' ? null : req.user), (req.password == '' ? null : req.password), req.email, req.link, (req.footer == '' ? null : req.footer) ]);
         ctx.response.body = { status: 1, message: 'New server added' }
        } else ctx.response.body = { status: 2, message: 'Web address for links address is missing' };
       } else ctx.response.body = { status: 2, message: 'E-mail address is missing' };
@@ -241,8 +241,8 @@ async function apiAdminEditServer(ctx: any) {
        if (req.hasOwnProperty('link') && req.link != '') {
         const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.id ]);
         if (resCount[0].cnt == 1) {
-         await dbQuery('INSERT INTO servers (server, port, secure, auth_user, auth_pass, email, link, footer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ req.hostname, port, (req.secure == '1' ? true : false), (req.user == '' ? null : req.user), (req.password == '' ? null : req.password), req.email, req.link, (req.footer == '' ? null : req.footer) ]);
-         ctx.response.body = { status: 1, message: 'New server added' }
+         await dbQuery('UPDATE servers SET server = ?, port = ?, secure = ?, auth_user = ?, auth_pass = ?, email = ?, link = ?, footer = ? WHERE id = ?', [ req.hostname, port, req.secure, (req.user == '' ? null : req.user), (req.password == '' ? null : req.password), req.email, req.link, (req.footer == '' ? null : req.footer), req.id ]);
+         ctx.response.body = { status: 1, message: 'Server edited' }
         } else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' }; 
        } else ctx.response.body = { status: 2, message: 'Web address for links address is missing' };
       } else ctx.response.body = { status: 2, message: 'E-mail address is missing' };
