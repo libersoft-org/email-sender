@@ -203,7 +203,10 @@ async function copyCampaignModal(id, name) {
 async function copyCampaign(id) {
  document.querySelector('.modal .body').innerHTML = getLoader();
  const res = await getAPI('/api/admin/copy_campaign', { id: id });
- console.log(res);
+ if (res.status == 1) {
+  modalClose();
+  getPage('campaigns');
+ } else document.querySelector('.modal .body').innerHTML = res.message;
 }
 
 async function deleteCampaignModal(id, name) {

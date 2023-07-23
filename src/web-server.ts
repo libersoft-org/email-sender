@@ -27,6 +27,7 @@ function processAPI(router: Router) {
  router.post('/api/unsubscribe', async (ctx: any) => await apiUnsubscribe(ctx));
  router.post('/api/admin/get_campaigns', async (ctx: any) => await apiAdminGetCampaigns(ctx));
  router.post('/api/admin/add_campaign', async (ctx: any) => await apiAdminAddCampaign(ctx));
+ router.post('/api/admin/copy_campaign', async (ctx: any) => await apiAdminCopyCampaign(ctx));
  router.post('/api/admin/delete_campaign', async (ctx: any) => await apiAdminDeleteCampaign(ctx));
  router.post('/api/admin/get_databases', async (ctx: any) => await apiAdminGetDatabases(ctx));
  router.post('/api/admin/add_database', async (ctx: any) => await apiAdminAddDatabase(ctx));
@@ -95,6 +96,20 @@ async function apiAdminAddCampaign(ctx: any) {
     } else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' };
    } else ctx.response.body = { status: 2, message: 'Server ID is missing' }; 
   } else ctx.response.body = { status: 2, message: 'Campaign name is missing' };
+ } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
+}
+
+async function apiAdminCopyCampaign(ctx: any) {
+ if (ctx.request.body().type === 'json') {
+  const req = await ctx.request.body().value;
+  if (req.hasOwnProperty('id') && req.id != '') {
+   const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.id ]);
+   if (resCount[0].cnt == 1) {
+    const resValues = await dbQuery('SELECT name, id_server, visible_name, subject, body FROM campaigns WHERE id = ?', [ req.id ]);
+    await dbQuery('INSERT INTO campaigns (name, id_server, visible_name, subject, body) VALUES (?, ?, ?, ?, ?)', [ resValues[0].name, resValues[0].id_server, resValues[0].visible_name, resValues[0].subject, resValues[0].body ]);
+    ctx.response.body = { status: 1, message: 'Campaign successfully copied' };
+   } else ctx.response.body = { status: 2, message: 'Campaign with this ID does not exist' };
+  } else ctx.response.body = { status: 2, message: 'Campaign ID is missing' };
  } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
 }
 
