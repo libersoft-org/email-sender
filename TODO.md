@@ -10,7 +10,7 @@
 ## Web Server script
 - campaign management UI:
   - campaigns (edit, duplicate)
-  - databases (import)
+  - databases (rename (edit), import)
   - servers (edit, duplicate)
   - links + visits + other stats data (view, add, edit, delete)
   - send queue (view, delete - based on campaign or everything)
