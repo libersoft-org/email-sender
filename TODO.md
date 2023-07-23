@@ -11,15 +11,15 @@
   - databases (import)
   - links + visits + other stats data (view, add, edit, delete)
   - send queue (view, delete - based on campaign or everything)
+  - admin API - add login / logout + token
+  - modal - close on escape, confirm on enter, autofocus the first input
   - modal window:
     - add drag and drop move
     - add resize
     - fix scrollbar in modal body
     - fix max-width
-  - admin API - add login / logout + token
   - add mobile responsive design
   - campaigns, databases, servers, short links, queue - add paging to API and frontend
-  - modal - close on escape, confirm on enter, autofocus the first input
 
 ## DB import
 - remove this script after it's in campaign management UI
