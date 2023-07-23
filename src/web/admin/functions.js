@@ -174,12 +174,12 @@ async function sendCampaignModal(id, name) {
 
 async function sendCampaign(id) {
  const db_name = document.querySelector('.modal .body #form-database').value;
- document.querySelector('.modal .body').innerHTML = getLoader();
- const res = await getAPI('/api/admin/send_campaign', {
-  id: id,
-  id_database: db_name
- });
- console.log(res);
+ document.querySelector('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/send_campaign', { id: id, database: db_name });
+ if (res.status == 1) {
+  modalClose();
+  getPage('campaigns');
+ } else document.querySelector('.modal .body .error').innerHTML = res.message;
 }
 
 async function copyCampaignModal(id, name) {

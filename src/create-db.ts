@@ -26,9 +26,9 @@ async function start() {
    EXECUTE stmt;
    DEALLOCATE PREPARE stmt;
   END;`,
-  `CREATE PROCEDURE IF NOT EXISTS createQueue(IN table_name VARCHAR(255), IN server_id INT, IN campaign_id INT)
+  `CREATE PROCEDURE IF NOT EXISTS createQueue(IN table_name VARCHAR(255), IN campaign_id INT)
   BEGIN
-   SET @add_queue = CONCAT('INSERT INTO queue (email, id_server, id_campaign) SELECT email, ', server_id, ', ', campaign_id, ' FROM recipients_', table_name, ' WHERE email NOT IN (SELECT email FROM unsubscribed)');
+   SET @add_queue = CONCAT('INSERT INTO queue (email, id_campaign) SELECT email, ', campaign_id, ' FROM recipients_', table_name, ' WHERE email NOT IN (SELECT email FROM unsubscribed)');
    PREPARE stmt FROM @add_queue;
    EXECUTE stmt;
    DEALLOCATE PREPARE stmt;

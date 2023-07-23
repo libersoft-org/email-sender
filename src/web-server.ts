@@ -27,6 +27,7 @@ function processAPI(router: Router) {
  router.post('/api/unsubscribe', async (ctx: any) => await apiUnsubscribe(ctx));
  router.post('/api/admin/get_campaigns', async (ctx: any) => await apiAdminGetCampaigns(ctx));
  router.post('/api/admin/add_campaign', async (ctx: any) => await apiAdminAddCampaign(ctx));
+ router.post('/api/admin/send_campaign', async (ctx: any) => await apiAdminSendCampaign(ctx));
  router.post('/api/admin/copy_campaign', async (ctx: any) => await apiAdminCopyCampaign(ctx));
  router.post('/api/admin/delete_campaign', async (ctx: any) => await apiAdminDeleteCampaign(ctx));
  router.post('/api/admin/get_databases', async (ctx: any) => await apiAdminGetDatabases(ctx));
@@ -100,6 +101,24 @@ async function apiAdminAddCampaign(ctx: any) {
     } else ctx.response.body = { status: 2, message: 'Server with this ID does not exist' };
    } else ctx.response.body = { status: 2, message: 'Server ID is missing' }; 
   } else ctx.response.body = { status: 2, message: 'Campaign name is missing' };
+ } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
+}
+
+async function apiAdminSendCampaign(ctx: any) {
+ if (ctx.request.body().type === 'json') {
+  const req = await ctx.request.body().value;
+  if (req.hasOwnProperty('id') && req.id != '') {
+   if (req.hasOwnProperty('database') && req.database != '') {
+    const resCampaign = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.id ]);
+    if (resCampaign[0].cnt == 1) {
+     const resDatabase = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.database ]);
+     if (resDatabase.length == 1) {
+      await dbQuery('CALL createQueue(?, ?)', [ req.database, req.id ]);
+      ctx.response.body = { status: 1, message: 'Campaign added to queue' };
+     } else ctx.response.body = { status: 2, message: 'Database with this name does not exist' };
+    } else ctx.response.body = { status: 2, message: 'Campaign with this ID does not exist' };
+   } else ctx.response.body = { status: 2, message: 'Database name is missing' };
+  } else ctx.response.body = { status: 2, message: 'Campaign ID is missing' };
  } else ctx.response.body = { status: 2, message: 'Request is not in JSON format' };
 }
 
