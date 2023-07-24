@@ -32,6 +32,7 @@ function processAPI(router: Router) {
   '/api/admin/delete_campaign': apiAdminDeleteCampaign,
   '/api/admin/get_databases': apiAdminGetDatabases,
   '/api/admin/add_database': apiAdminAddDatabase,
+  '/api/admin/import_database': apiAdminImportDatabase,
   '/api/admin/edit_database': apiAdminEditDatabase,
   '/api/admin/delete_database': apiAdminDeleteDatabase,
   '/api/admin/get_links': apiAdminGetLinks,
@@ -181,6 +182,13 @@ async function apiAdminAddDatabase(req: any) {
  if (!regex.test(req.body.name)) return setMessage(2, 'Database name not defined');
  await dbQuery('CALL createRecipientsTable(?)', [ req.body.name ]);
  return setMessage(1, 'Database added');
+}
+
+async function apiAdminImportDatabase(req: any) {
+ const table = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.name ]);
+ if (table.length != 1) return setMessage(2, 'The database with the provided name not found');
+ // TODO: get file
+ console.log(req);
 }
 
 async function apiAdminEditDatabase(req: any) {

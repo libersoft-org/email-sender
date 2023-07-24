@@ -216,6 +216,22 @@ async function addDatabase() {
  } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
 }
 
+async function importDatabaseModal(name) {
+ await getModal('Import contacts to database', await getFileContent('html/temp-databases-import.html'));
+ const body = qs('.modal .body');
+ body.innerHTML = body.innerHTML.replaceAll('{NAME}', name);
+}
+
+async function importDatabase() {
+ const values = { name: qs('.modal .body #form-name').value }
+ qs('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/import_database', values);
+ if (res.status == 1) {
+  closeModal();
+  getPage('databases');
+ } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
 async function editDatabaseModal(name) {
  await getModal('Edit database', await getFileContent('html/temp-databases-edit.html'));
  const body = qs('.modal .body');

@@ -1,0 +1,10 @@
+<input id="form-name" type="hidden" value="{NAME}" />
+<div class="form-item">Import contacts to the database <span class="bold">{NAME}</span>:</div>
+<div class="form-item">
+ <label for="form-file">Select a file:</label>
+ <input type="file" id="form-file" name="file" />
+</div>
+<div class="form-item">
+ <div class="error"></div>
+</div>
+<a id="form-confirm" class="button" onclick="importDatabase()">Import</a>
