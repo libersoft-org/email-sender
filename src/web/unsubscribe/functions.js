@@ -14,7 +14,7 @@ async function unsubscribe() {
  });
  if (res.ok) {
   const data = await res.json();
-  setLabel(data.type, data.message);
+  setLabel(data.status, data.message);
  } else setLabel(2, 'Error: Cannot connect with server.');
  emailElem.focus();
 }
@@ -23,10 +23,10 @@ function enterPressed() {
  if (event.key === 'Enter') unsubscribe();
 }
 
-function setLabel(type, message) {
+function setLabel(status, message) {
  const msg = document.querySelector('#message')
- if (type == 0) msg.className =  'green';
- if (type == 1) msg.className =  'orange';
- if (type == 2) msg.className =  'red';
+ if (status == 1) msg.className = 'green';
+ if (status == 2) msg.className = 'orange';
+ if (status == 3) msg.className = 'red';
  msg.innerHTML = message;
 }
