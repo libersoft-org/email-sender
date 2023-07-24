@@ -1,0 +1,23 @@
+<input id="form-id" type="hidden" value="{ID}" />
+<div class="form-item">
+ <input id="form-name" type="text" placeholder="Campaign name" value="{NAME}" />
+</div>
+<div class="form-item">
+ <select id="form-server">
+  <option value="">--- Server ---</option>
+ </select>
+</div>
+<div class="form-item">
+ <input id="form-visible" type="text" placeholder="Visible name" value="{VISIBLE_NAME}" />
+</div>
+<div class="form-item">
+ <input id="form-subject" type="text" placeholder="Subject" value="{SUBJECT}" />
+</div>
+<div class="form-item">
+ <div>Body:</div>
+ <textarea id="form-body" type="text">{BODY}</textarea>
+</div>
+<div class="form-item">
+ <div class="error"></div>
+</div>
+<a id="form-confirm" class="button" onclick="editCampaign()">Edit</a>

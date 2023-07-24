@@ -138,6 +138,40 @@ async function copyCampaign(id) {
  } else qs('.modal .body').innerHTML = res.message;
 }
 
+async function editCampaignModal(id) {
+ const temp = await getFileContent('html/temp-campaigns-edit.html')
+ const res = await getAPI('/api/admin/get_campaign', { id: id });
+ if (res.status == 1) {
+  const html = translate(temp, {
+  '{ID}': id,
+  '{NAME}': res.data[0].name,
+  '{ID_SERVER}': res.data[0].id_server,
+  '{VISIBLE_NAME}': res.data[0].visible_name,
+  '{SUBJECT}': res.data[0].subject,
+  '{BODY}': res.data[0].body
+  });
+  await getModal('Edit campaign', html);
+ } else await getModal('Edit campaign', '<div class="error">' + res.message + '</div>');
+}
+
+async function editCampaign() {
+ const values = {
+  id: qs('.modal .body #form-id').value,
+  name: qs('.modal .body #form-name').value,
+  id_server: qs('.modal .body #form-server').value,
+  visible_name: qs('.modal .body #form-visible').value,
+  subject: qs('.modal .body #form-subject').value,
+  body: qs('.modal .body #form-body').value
+ }
+ qs('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/edit_campaign', values);
+ if (res.status == 1) {
+  closeModal();
+  getPage('servers');
+ } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
+
 async function deleteCampaignModal(id, name) {
  await getModal('Delete campaign', await getFileContent('html/temp-campaigns-delete.html'));
  const body = qs('.modal .body');

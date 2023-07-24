@@ -24,6 +24,7 @@ function processAPI(router: Router) {
  const routes: { [key: string]: (req: any) => Promise<any> } = {
   '/api/unsubscribe': apiUnsubscribe,
   '/api/admin/get_campaigns': apiAdminGetCampaigns,
+  '/api/admin/get_campaign': apiAdminGetCampaign,
   '/api/admin/add_campaign': apiAdminAddCampaign,
   '/api/admin/send_campaign': apiAdminSendCampaign,
   '/api/admin/copy_campaign': apiAdminCopyCampaign,
@@ -98,6 +99,13 @@ async function isEmailInDatabase(email: string) {
 
 async function apiAdminGetCampaigns(req: any) {
  return setData(1, await dbQuery('SELECT c.id, c.name, c.id_server, s.server, c.subject, c.body, c.created FROM campaigns c, servers s WHERE s.id = c.id_server ORDER BY c.id DESC'));
+}
+
+async function apiAdminGetCampaign(req: any) {
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
+ const res = await dbQuery('SELECT name, id_server, visible_name, subject, body, created FROM campaigns WHERE id = ?', [ req.body.id ]);
+ if (res.length != 1) return setMessage(2, 'Campaign with the provided ID does not exist');
+ return setData(1, res);
 }
 
 async function apiAdminAddCampaign(req: any) {
@@ -192,9 +200,9 @@ async function apiAdminGetLinks(req: any) {
 
 async function apiAdminGetLink(req: any) {
  if (!isFilled(req.body, 'id')) return setMessage(2, 'Link ID is missing');
- const link = await dbQuery('SELECT name, link, created FROM links WHERE id = ?', [ req.body.id ]);
- if (link.length != 1) return setMessage(2, 'Link with this ID does not exist');
- return setData(1, link);
+ const res = await dbQuery('SELECT name, link, created FROM links WHERE id = ?', [ req.body.id ]);
+ if (res.length != 1) return setMessage(2, 'Link with the provided ID does not exist');
+ return setData(1, res);
 }
 
 async function apiAdminAddLink(req: any) {
