@@ -96,8 +96,8 @@ async function apiAdminGetCampaigns(req: any) {
 }
 
 async function apiAdminAddCampaign(req: any) {
- if (req.body.hasOwnProperty('name') && req.body.name != '') {
-  if (req.body.hasOwnProperty('id_server') && req.body.id_server != '') {
+ if (propertyExists(req.body, 'name')) {
+  if (propertyExists(req.body, 'id_server')) {
    const res = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id_server ]);
    if (res[0].cnt == 1) {
     await dbQuery('INSERT INTO campaigns (name, id_server, visible_name, subject, body) VALUES (?, ?, ?, ?, ?)', [ req.body.name, req.body.id_server, (req.body.visible_name == '' ? null : req.body.visible_name), (req.body.subject == '' ? null : req.body.subject), (req.body.body == '' ? null : req.body.body) ]);
@@ -108,8 +108,8 @@ async function apiAdminAddCampaign(req: any) {
 }
 
 async function apiAdminSendCampaign(req: any) {
- if (req.body.hasOwnProperty('id') && req.body.id != '') {
-  if (req.body.hasOwnProperty('database') && req.body.database != '') {
+ if (propertyExists(req.body, 'id')) {
+  if (propertyExists(req.body, 'database')) {
    const resCampaign = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id ]);
    if (resCampaign[0].cnt == 1) {
     const resDatabase = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.database ]);
@@ -123,7 +123,7 @@ async function apiAdminSendCampaign(req: any) {
 }
 
 async function apiAdminCopyCampaign(req: any) {
- if (req.body.hasOwnProperty('id') && req.body.id != '') {
+ if (propertyExists(req.body, 'id')) {
   const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id ]);
   if (resCount[0].cnt == 1) {
    const resValues = await dbQuery('SELECT name, id_server, visible_name, subject, body FROM campaigns WHERE id = ?', [ req.body.id ]);
@@ -146,7 +146,7 @@ async function apiAdminGetDatabases(req: any) {
 }
 
 async function apiAdminAddDatabase(req: any) {
- if (req.body.hasOwnProperty('name') && req.body.name != '') {
+ if (propertyExists(req.body, 'name')) {
   const regex = /^[a-z0-9_]+$/;
   if (regex.test(req.body.name)) {
    await dbQuery('CALL createRecipientsTable(?)', [ req.body.name ]);
@@ -156,8 +156,8 @@ async function apiAdminAddDatabase(req: any) {
 }
 
 async function apiAdminEditDatabase(req: any) {
- if (req.body.hasOwnProperty('name') && req.body.name != '') {
-  if (req.body.hasOwnProperty('name_old') && req.body.name_old != '') {
+ if (propertyExists(req.body, 'name')) {
+  if (propertyExists(req.body, 'name_old')) {
    const table = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.name_old ]);
    if (table.length == 1) {
     const regex = /^[a-z0-9_]+$/;
@@ -171,7 +171,7 @@ async function apiAdminEditDatabase(req: any) {
 }
 
 async function apiAdminDeleteDatabase(req: any) {
- if (req.body.hasOwnProperty('name') && req.body.name != '') {
+ if (propertyExists(req.body, 'name')) {
   const tables = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.name ]);
   if (tables.length == 1) {
    try {
@@ -189,7 +189,7 @@ async function apiAdminGetServers(req: any) {
 }
 
 async function apiAdminGetServer(req: any) {
- if (req.body.hasOwnProperty('id') && req.body.id != '') {
+ if (propertyExists(req.body, 'id')) {
   const server = await dbQuery('SELECT server, port, secure, auth_user, auth_pass, email, link, footer, created FROM servers WHERE id = ?', [ req.body.id ]);
   if (server.length == 1) return setData(1, server);
   else return setMessage(2, 'Server with this ID does not exist');
@@ -197,13 +197,13 @@ async function apiAdminGetServer(req: any) {
 }
 
 async function apiAdminAddServer(req: any) {
- if (req.body.hasOwnProperty('hostname') && req.body.hostname != '') {
-  if (req.body.hasOwnProperty('port') && req.body.port != '') {
+ if (propertyExists(req.body, 'hostname')) {
+  if (propertyExists(req.body, 'port')) {
    const port = parseInt(req.body.port);
    if (Number.isInteger(port)) {
     if (port >= 0 && port <= 65535) {
-     if (req.body.hasOwnProperty('email') && req.body.email != '') {
-      if (req.body.hasOwnProperty('link') && req.body.link != '') {
+     if (propertyExists(req.body, 'email')) {
+      if (propertyExists(req.body, 'link')) {
        await dbQuery('INSERT INTO servers (server, port, secure, auth_user, auth_pass, email, link, footer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ req.body.hostname, port, req.body.secure, (req.body.user == '' ? null : req.body.user), (req.body.password == '' ? null : req.body.password), req.body.email, req.body.link, (req.body.footer == '' ? null : req.body.footer) ]);
        return setMessage(1, 'New server added');
       } else return setMessage(2, 'Web address for links address is missing');
@@ -215,7 +215,7 @@ async function apiAdminAddServer(req: any) {
 }
 
 async function apiAdminCopyServer(req: any) {
- if (req.body.hasOwnProperty('id') && req.body.id != '') {
+ if (propertyExists(req.body, 'id')) {
   const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id ]);
   if (resCount[0].cnt == 1) {
    const resValues = await dbQuery('SELECT server, port, secure, auth_user, auth_pass, email, link, footer FROM servers WHERE id = ?', [ req.body.id ]);
@@ -226,13 +226,13 @@ async function apiAdminCopyServer(req: any) {
 }
 
 async function apiAdminEditServer(req: any) {
- if (req.body.hasOwnProperty('hostname') && req.body.hostname != '') {
-  if (req.body.hasOwnProperty('port') && req.body.port != '') {
+ if (propertyExists(req.body, 'hostname')) {
+  if (propertyExists(req.body, 'port')) {
    const port = parseInt(req.body.port);
    if (Number.isInteger(port)) {
     if (port >= 0 && port <= 65535) {
-     if (req.body.hasOwnProperty('email') && req.body.email != '') {
-      if (req.body.hasOwnProperty('link') && req.body.link != '') {
+     if (propertyExists(req.body, 'email')) {
+      if (propertyExists(req.body, 'link')) {
        const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id ]);
        if (resCount[0].cnt == 1) {
         await dbQuery('UPDATE servers SET server = ?, port = ?, secure = ?, auth_user = ?, auth_pass = ?, email = ?, link = ?, footer = ? WHERE id = ?', [ req.body.hostname, port, req.body.secure, (req.body.user == '' ? null : req.body.user), (req.body.password == '' ? null : req.body.password), req.body.email, req.body.link, (req.body.footer == '' ? null : req.body.footer), req.body.id ]);
@@ -247,7 +247,7 @@ async function apiAdminEditServer(req: any) {
 }
 
 async function apiAdminDeleteCampaign(req: any) {
- if (req.body.hasOwnProperty('id') && req.body.id != '') {
+ if (propertyExists(req.body, 'id')) {
   const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id.toString() ]);
   if (cnt[0].cnt == 1) {
    const cnt_queue = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id.toString() ]);
@@ -264,7 +264,7 @@ async function apiAdminDeleteCampaign(req: any) {
 }
 
 async function apiAdminDeleteServer(req: any) {
- if (req.body.hasOwnProperty('id') && req.body.id != '') {
+ if (propertyExists(req.body, 'id')) {
   const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id.toString() ]);
   if (cnt[0].cnt == 1) {
    const cnt_campaigns = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id_server = ?', [ req.body.id.toString() ]);
@@ -278,6 +278,10 @@ async function apiAdminDeleteServer(req: any) {
    } else return setMessage(2, 'Cannot delete this server, some campaigns are still using it');
   } else return setMessage(2, 'Server with the provided ID does not exist');
  } else return setMessage(2, 'Server ID is missing');
+}
+
+function propertyExists(object: any, propertyName: string): boolean {
+ return object.hasOwnProperty(propertyName) && object[propertyName] != '';
 }
 
 function setMessage(status: number, message: string) {
