@@ -4,23 +4,20 @@ import { exists } from 'https://deno.land/std/fs/mod.ts';
 
 let settings: any;
 let mysqlClient: Client;
+const port = 80;
 
 start();
 
 async function start() {
  await loadSettings('settings.json');
- await loadWebServer();
-}
-
-async function loadWebServer() {
  const app = new Application();
  const router = new Router();
  processAPI(router);
  processStaticFiles(router);
  app.use(router.routes());
  app.use(router.allowedMethods());
- setLog('Web server is running on port 80 ...');
- await app.listen({ port: 80 });
+ setLog('Web server is running on port ' + port + ' ...');
+ await app.listen({ port: port });
 }
 
 function processAPI(router: Router) {
@@ -44,11 +41,11 @@ function processAPI(router: Router) {
  };
  for (const route in routes) router.post(route, async (ctx: any) => {
   if (ctx.request.body().type === 'json') {
-   const req = {
+   // TODO: check if admin is logged in on all /api/admin/*
+   ctx.response.body = await routes[route]({
     body: await ctx.request.body().value,
     ip: ctx.request.ip
-   }
-   ctx.response.body = await routes[route](req);
+   });
   } else ctx.response.body = setMessage(2, 'Request is not in JSON format');
  });
 }
