@@ -186,7 +186,7 @@ async function apiAdminDeleteDatabase(req: any) {
 }
 
 async function apiAdminGetLinks(req: any) {
- return setData(1, await dbQuery('SELECT id, name, link created FROM links ORDER BY id DESC'));
+ return setData(1, await dbQuery('SELECT id, name, link, created FROM links ORDER BY id DESC'));
 }
 
 async function apiAdminAddLink(req: any) {
@@ -194,8 +194,6 @@ async function apiAdminAddLink(req: any) {
  const regex = /^[a-z0-9]+$/;
  if (!regex.test(req.body.name)) return setMessage(2, 'Name can contain only lower case letters of English alphabet and numbers');
  if (!isFilled(req.body, 'link')) return setMessage(2, 'Destination link is missing');
- const res = await dbQuery('SELECT COUNT(*) AS cnt FROM links WHERE id = ?', [ req.body.id ]);
- if (res[0].cnt != 1) return setMessage(2, 'Link with this ID does not exist');
  await dbQuery('INSERT INTO links (name, link) VALUES (?, ?)', [ req.body.name, req.body.link ]);
  return setMessage(1, 'New link added');
 }

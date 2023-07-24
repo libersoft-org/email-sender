@@ -220,6 +220,19 @@ async function addLinkModal() {
  await getModal('New link', await getFileContent('html/temp-links-add.html'));
 }
 
+async function addLink() {
+ const values = {
+  name: qs('.modal .body #form-name').value,
+  link: qs('.modal .body #form-link').value,
+ }
+ qs('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/add_link', values);
+ if (res.status == 1) {
+  closeModal();
+  getPage('links');
+ } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
 async function getServers() {
  await getPageData('html/temp-servers-row.html', await getAPI('/api/admin/get_servers'), (item) => ({
   '{ID}': item.id,
