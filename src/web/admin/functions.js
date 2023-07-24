@@ -279,7 +279,6 @@ async function addServer() {
   link: document.querySelector('.modal .body #form-link').value,
   footer: document.querySelector('.modal .body #form-footer').value
  }
- console.log(values);
  document.querySelector('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/add_server', values);
  if (res.status == 1) {
@@ -324,7 +323,6 @@ async function editServerModal(id) {
 }
 
 async function editServer() {
- console.log(document.querySelector('.modal .body #form-secure').checked);
  const values = {
   id: document.querySelector('.modal .body #form-id').value,
   hostname: document.querySelector('.modal .body #form-hostname').value,
@@ -338,7 +336,6 @@ async function editServer() {
  }
  document.querySelector('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/edit_server', values);
- console.log(res);
  if (res.status == 1) {
   modalClose();
   getPage('servers');
