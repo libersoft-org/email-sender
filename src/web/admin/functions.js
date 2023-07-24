@@ -235,6 +235,21 @@ async function addLink() {
  } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
 }
 
+async function deleteLinkModal(id, name) {
+ await getModal('Delete link', await getFileContent('html/temp-links-delete.html'));
+ const body = qs('.modal .body');
+ body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
+}
+
+async function deleteLink(id) {
+ qs('.modal .body').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/delete_link', { id: id });
+ if (res.status == 1) {
+  closeModal();
+  getPage('links');
+ } else qs('.modal .body').innerHTML = res.message;
+}
+
 async function getServers() {
  await getPageData('html/temp-servers-row.html', await getAPI('/api/admin/get_servers'), (item) => ({
   '{ID}': item.id,

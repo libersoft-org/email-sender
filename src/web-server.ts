@@ -214,6 +214,7 @@ async function apiAdminDeleteLink(req: any) {
  const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM links WHERE id = ?', [ req.body.id.toString() ]);
  if (cnt[0].cnt != 1) return setMessage(2, 'Link with the provided ID does not exist');
  try {
+  await dbQuery('DELETE FROM visits WHERE id_link = ?', [ req.body.id.toString() ]);
   await dbQuery('DELETE FROM links WHERE id = ?', [ req.body.id.toString() ]);
   return setMessage(1, 'Link deleted');
  } catch {

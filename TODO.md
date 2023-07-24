@@ -9,8 +9,10 @@
 - campaign management UI:
   - campaigns (edit)
   - databases (import)
-  - links (edit, delete)
-  - links - add more stats data to visits table (browser, resolution etc.) + add summary button for each link
+  - links:
+    - edit
+    - add more stats data to visits table (browser, resolution etc.) + add summary button for each link
+    - add redirect link above stats data table
   - send queue (view, delete - based on campaign or everything)
   - admin API - add login / logout + token
   - modal - close on escape, confirm on enter, autofocus the first input
