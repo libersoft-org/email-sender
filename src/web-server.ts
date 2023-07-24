@@ -32,6 +32,10 @@ function processAPI(router: Router) {
   '/api/admin/add_database': apiAdminAddDatabase,
   '/api/admin/edit_database': apiAdminEditDatabase,
   '/api/admin/delete_database': apiAdminDeleteDatabase,
+  '/api/admin/get_links': apiAdminGetLinks,
+  '/api/admin/add_link': apiAdminAddLink,
+  '/api/admin/edit_link': apiAdminEditLink,
+  '/api/admin/delete_link': apiAdminDeleteLink,
   '/api/admin/get_servers': apiAdminGetServers,
   '/api/admin/get_server': apiAdminGetServer,
   '/api/admin/add_server': apiAdminAddServer,
@@ -96,8 +100,8 @@ async function apiAdminGetCampaigns(req: any) {
 }
 
 async function apiAdminAddCampaign(req: any) {
- if (!propertyExists(req.body, 'name')) return setMessage(2, 'Campaign name is missing');
- if (!propertyExists(req.body, 'id_server')) return setMessage(2, 'Server ID is missing');
+ if (!isFilled(req.body, 'name')) return setMessage(2, 'Campaign name is missing');
+ if (!isFilled(req.body, 'id_server')) return setMessage(2, 'Server ID is missing');
  const res = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id_server ]);
  if (res[0].cnt != 1) return setMessage(2, 'Server with this ID does not exist');
  await dbQuery('INSERT INTO campaigns (name, id_server, visible_name, subject, body) VALUES (?, ?, ?, ?, ?)', [ req.body.name, req.body.id_server, (req.body.visible_name == '' ? null : req.body.visible_name), (req.body.subject == '' ? null : req.body.subject), (req.body.body == '' ? null : req.body.body) ]);
@@ -105,8 +109,8 @@ async function apiAdminAddCampaign(req: any) {
 }
 
 async function apiAdminSendCampaign(req: any) {
- if (!propertyExists(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
- if (!propertyExists(req.body, 'database')) return setMessage(2, 'Database name is missing');
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
+ if (!isFilled(req.body, 'database')) return setMessage(2, 'Database name is missing');
  const resCampaign = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id ]);
  if (resCampaign[0].cnt != 1) return setMessage(2, 'Campaign with this ID does not exist');
  const resDatabase = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.database ]);
@@ -116,12 +120,26 @@ async function apiAdminSendCampaign(req: any) {
 }
 
 async function apiAdminCopyCampaign(req: any) {
- if (!propertyExists(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
  const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id ]);
  if (resCount[0].cnt != 1) return setMessage(2, 'Campaign with this ID does not exist');
  const resValues = await dbQuery('SELECT name, id_server, visible_name, subject, body FROM campaigns WHERE id = ?', [ req.body.id ]);
  await dbQuery('INSERT INTO campaigns (name, id_server, visible_name, subject, body) VALUES (?, ?, ?, ?, ?)', [ resValues[0].name, resValues[0].id_server, resValues[0].visible_name, resValues[0].subject, resValues[0].body ]);
  return setMessage(1, 'Campaign successfully copied');
+}
+
+async function apiAdminDeleteCampaign(req: any) {
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
+ const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id.toString() ]);
+ if (cnt[0].cnt != 1) return setMessage(2, 'Campaign with the provided ID does not exist');
+ const cnt_queue = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id.toString() ]);
+ if (cnt_queue[0].cnt != 0) return setMessage(2, 'Cannot delete this campaign, some e-mails of this campaign are still in queue'); 
+ try {
+  await dbQuery('DELETE FROM campaigns WHERE id = ?', [ req.body.id.toString() ]);
+  return setMessage(1, 'Campaign deleted');
+ } catch {
+  return setMessage(2, 'Unable to delete this campaign');
+ }
 }
 
 async function apiAdminGetDatabases(req: any) {
@@ -137,7 +155,7 @@ async function apiAdminGetDatabases(req: any) {
 }
 
 async function apiAdminAddDatabase(req: any) {
- if (!propertyExists(req.body, 'name')) return setMessage(2, 'Database name not defined');
+ if (!isFilled(req.body, 'name')) return setMessage(2, 'Database name not defined');
  const regex = /^[a-z0-9_]+$/;
  if (!regex.test(req.body.name)) return setMessage(2, 'Database name not defined');
  await dbQuery('CALL createRecipientsTable(?)', [ req.body.name ]);
@@ -145,18 +163,18 @@ async function apiAdminAddDatabase(req: any) {
 }
 
 async function apiAdminEditDatabase(req: any) {
- if (!propertyExists(req.body, 'name')) return setMessage(2, 'New database name not defined');
- if (!propertyExists(req.body, 'name_old')) return setMessage(2, 'Old database name not defined');
+ if (!isFilled(req.body, 'name')) return setMessage(2, 'New database name not defined');
+ if (!isFilled(req.body, 'name_old')) return setMessage(2, 'Old database name not defined');
  const table = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.name_old ]);
  if (table.length != 1) return setMessage(2, 'The old database with this name not found');
  const regex = /^[a-z0-9_]+$/;
- if (!regex.test(req.body.name))  return setMessage(2, 'New database name can contain only lower case letters of English alphabet and underscores');
+ if (!regex.test(req.body.name)) return setMessage(2, 'New database name can contain only lower case letters of English alphabet, numbers and underscores');
  await dbQuery('RENAME TABLE ?? TO ??', [ 'recipients_' + req.body.name_old, 'recipients_' + req.body.name ]);
  return setMessage(1, 'Database name changed');
 }
 
 async function apiAdminDeleteDatabase(req: any) {
- if (!propertyExists(req.body, 'name')) return setMessage(2, 'Database name is missing');
+ if (!isFilled(req.body, 'name')) return setMessage(2, 'Database name is missing');
  const tables = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.name ]);
  if (tables.length != 1) return setMessage(2, 'Database with the provided name does not exist');
  try {
@@ -167,31 +185,69 @@ async function apiAdminDeleteDatabase(req: any) {
  }
 }
 
+async function apiAdminGetLinks(req: any) {
+ return setData(1, await dbQuery('SELECT id, name, link created FROM links ORDER BY id DESC'));
+}
+
+async function apiAdminAddLink(req: any) {
+ if (!isFilled(req.body, 'name')) return setMessage(2, 'Name is missing');
+ const regex = /^[a-z0-9]+$/;
+ if (!regex.test(req.body.name)) return setMessage(2, 'Name can contain only lower case letters of English alphabet and numbers');
+ if (!isFilled(req.body, 'link')) return setMessage(2, 'Destination link is missing');
+ const res = await dbQuery('SELECT COUNT(*) AS cnt FROM links WHERE id = ?', [ req.body.id ]);
+ if (res[0].cnt != 1) return setMessage(2, 'Link with this ID does not exist');
+ await dbQuery('INSERT INTO links (name, link) VALUES (?, ?)', [ req.body.name, req.body.link ]);
+ return setMessage(1, 'New link added');
+}
+
+async function apiAdminEditLink(req: any) {
+ if (!isFilled(req.body, 'name')) return setMessage(2, 'Name is missing');
+ const regex = /^[a-z0-9]+$/;
+ if (!regex.test(req.body.name)) return setMessage(2, 'Name can contain only lower case letters of English alphabet and numbers');
+ if (!isFilled(req.body, 'link')) return setMessage(2, 'Destination link is missing');
+ const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM links WHERE id = ?', [ req.body.id ]);
+ if (resCount[0].cnt != 1) return setMessage(2, 'Link with this ID does not exist');
+ await dbQuery('UPDATE links SET name = ?, link = ? WHERE id = ?', [ req.body.name, req.body.link, req.body.id ]);
+ return setMessage(1, 'Link edited');
+}
+
+async function apiAdminDeleteLink(req: any) {
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Link ID is missing');
+ const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM links WHERE id = ?', [ req.body.id.toString() ]);
+ if (cnt[0].cnt != 1) return setMessage(2, 'Link with the provided ID does not exist');
+ try {
+  await dbQuery('DELETE FROM links WHERE id = ?', [ req.body.id.toString() ]);
+  return setMessage(1, 'Link deleted');
+ } catch {
+  return setMessage(2, 'Unable to delete this link');
+ }
+}
+
 async function apiAdminGetServers(req: any) {
  return setData(1, await dbQuery('SELECT id, server, email, created FROM servers ORDER BY id DESC'));
 }
 
 async function apiAdminGetServer(req: any) {
- if (!propertyExists(req.body, 'id')) return setMessage(2, 'Server ID is missing');
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Server ID is missing');
  const server = await dbQuery('SELECT server, port, secure, auth_user, auth_pass, email, link, footer, created FROM servers WHERE id = ?', [ req.body.id ]);
  if (server.length != 1) return setMessage(2, 'Server with this ID does not exist');
  return setData(1, server);
 }
 
 async function apiAdminAddServer(req: any) {
- if (!propertyExists(req.body, 'hostname')) return setMessage(2, 'Server hostname is missing');
- if (!propertyExists(req.body, 'port')) return setMessage(2, 'Server port is missing');
+ if (!isFilled(req.body, 'hostname')) return setMessage(2, 'Server hostname is missing');
+ if (!isFilled(req.body, 'port')) return setMessage(2, 'Server port is missing');
  const port = parseInt(req.body.port);
  if (!Number.isInteger(port)) return setMessage(2, 'Server port has to be a whole number');
  if (port < 0 || port > 65535) return setMessage(2, 'Server port has to be in range of 0 - 65535');
- if (!propertyExists(req.body, 'email')) return setMessage(2, 'E-mail address is missing');
- if (!propertyExists(req.body, 'link')) return setMessage(2, 'Web address for links address is missing');
+ if (!isFilled(req.body, 'email')) return setMessage(2, 'E-mail address is missing');
+ if (!isFilled(req.body, 'link')) return setMessage(2, 'Web address for links address is missing');
  await dbQuery('INSERT INTO servers (server, port, secure, auth_user, auth_pass, email, link, footer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ req.body.hostname, port, req.body.secure, (req.body.user == '' ? null : req.body.user), (req.body.password == '' ? null : req.body.password), req.body.email, req.body.link, (req.body.footer == '' ? null : req.body.footer) ]);
  return setMessage(1, 'New server added');
 }
 
 async function apiAdminCopyServer(req: any) {
- if (!propertyExists(req.body, 'id')) return setMessage(2, 'Server ID is missing');
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Server ID is missing');
  const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id ]);
  if (resCount[0].cnt != 1) return setMessage(2, 'Server with this ID does not exist');
  const resValues = await dbQuery('SELECT server, port, secure, auth_user, auth_pass, email, link, footer FROM servers WHERE id = ?', [ req.body.id ]);
@@ -200,35 +256,21 @@ async function apiAdminCopyServer(req: any) {
 }
 
 async function apiAdminEditServer(req: any) {
- if (!propertyExists(req.body, 'hostname')) return setMessage(2, 'Server hostname is missing');
- if (!propertyExists(req.body, 'port')) return setMessage(2, 'Server port is missing');
+ if (!isFilled(req.body, 'hostname')) return setMessage(2, 'Server hostname is missing');
+ if (!isFilled(req.body, 'port')) return setMessage(2, 'Server port is missing');
  const port = parseInt(req.body.port);
  if (!Number.isInteger(port)) return setMessage(2, 'Server port has to be a whole number');
  if (port < 0 || port > 65535) return setMessage(2, 'Server port has to be in range of 0 - 65535');
- if (!propertyExists(req.body, 'email')) return setMessage(2, 'E-mail address is missing');
- if (!propertyExists(req.body, 'link')) return setMessage(2, 'Web address for links address is missing');
+ if (!isFilled(req.body, 'email')) return setMessage(2, 'E-mail address is missing');
+ if (!isFilled(req.body, 'link')) return setMessage(2, 'Web address for links address is missing');
  const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id ]);
  if (resCount[0].cnt != 1) return setMessage(2, 'Server with this ID does not exist');
  await dbQuery('UPDATE servers SET server = ?, port = ?, secure = ?, auth_user = ?, auth_pass = ?, email = ?, link = ?, footer = ? WHERE id = ?', [ req.body.hostname, port, req.body.secure, (req.body.user == '' ? null : req.body.user), (req.body.password == '' ? null : req.body.password), req.body.email, req.body.link, (req.body.footer == '' ? null : req.body.footer), req.body.id ]);
  return setMessage(1, 'Server edited');
 }
 
-async function apiAdminDeleteCampaign(req: any) {
- if (!propertyExists(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
- const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id.toString() ]);
- if (cnt[0].cnt != 1) return setMessage(2, 'Campaign with the provided ID does not exist');
- const cnt_queue = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id.toString() ]);
- if (cnt_queue[0].cnt != 0) return setMessage(2, 'Cannot delete this campaign, some e-mails of this campaign are still in queue'); 
- try {
-  await dbQuery('DELETE FROM campaigns WHERE id = ?', [ req.body.id.toString() ]);
-  return setMessage(1, 'Campaign deleted');
- } catch {
-  return setMessage(2, 'Unable to delete this campaign');
- }
-}
-
 async function apiAdminDeleteServer(req: any) {
- if (!propertyExists(req.body, 'id')) return setMessage(2, 'Server ID is missing');
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Server ID is missing');
  const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id.toString() ]);
  if (cnt[0].cnt != 1) return setMessage(2, 'Server with the provided ID does not exist');
  const cnt_campaigns = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id_server = ?', [ req.body.id.toString() ]);
@@ -241,7 +283,7 @@ async function apiAdminDeleteServer(req: any) {
  }
 }
 
-function propertyExists(object: any, propertyName: string): boolean {
+function isFilled(object: any, propertyName: string): boolean {
  return object.hasOwnProperty(propertyName) && object[propertyName] != '';
 }
 
