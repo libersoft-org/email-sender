@@ -212,6 +212,8 @@ async function getLinks() {
  await getPageData('html/temp-links-row.html', await getAPI('/api/admin/get_links'), (item) => ({
   '{ID}': item.id,
   '{NAME}': item.name,
+  '{LINK}': (item.link.length >= 30 ? item.link.slice(0, 30) + '...' : item.link),
+  '{VISITS}': item.visits + ' / ' + item.visits_unique,
   '{CREATED}': new Date(item.created).toLocaleString()
  }));
 }
@@ -223,7 +225,7 @@ async function addLinkModal() {
 async function addLink() {
  const values = {
   name: qs('.modal .body #form-name').value,
-  link: qs('.modal .body #form-link').value,
+  link: qs('.modal .body #form-link').value
  }
  qs('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/add_link', values);

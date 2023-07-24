@@ -186,7 +186,7 @@ async function apiAdminDeleteDatabase(req: any) {
 }
 
 async function apiAdminGetLinks(req: any) {
- return setData(1, await dbQuery('SELECT id, name, link, created FROM links ORDER BY id DESC'));
+ return setData(1, await dbQuery('SELECT l.id, l.name, l.link, COUNT(v.id) AS visits, COUNT(DISTINCT v.ip) AS visits_unique, l.created FROM links l LEFT JOIN visits v ON l.id = v.id_link GROUP BY l.id'));
 }
 
 async function apiAdminAddLink(req: any) {
