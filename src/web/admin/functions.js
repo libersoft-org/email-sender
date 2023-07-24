@@ -42,7 +42,7 @@ async function getPageContent(page) {
 async function getMenu() {
  const temp = await getFileContent('html/temp-menu.html');
  const pages = JSON.parse(await getFileContent('pages.json'));
- let menu_html = '';
+ let html = '';
  for (const page in pages) {
   if (pages[page].menu) {
    const button_html = translate(temp, {
@@ -50,10 +50,10 @@ async function getMenu() {
     '{NAME}': page == 'about' ? '' : page,
     '{LABEL}': pages[page].label
    });
-   menu_html += button_html + "\n";
+   html += button_html + "\n";
   }
  }
- qs('#menu .items').innerHTML = menu_html + "\n" + '<a onclick="logout()"><div class="item menu-logout">Logout</div></a>';
+ qs('#menu .items').innerHTML = html + "\n" + '<a onclick="logout()"><div class="item menu-logout">Logout</div></a>';
 }
 
 async function getPageData(template, api, trans) {
@@ -235,6 +235,33 @@ async function addLink() {
  } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
 }
 
+async function editLinkModal(id) {
+ const temp = await getFileContent('html/temp-links-edit.html')
+ const res = await getAPI('/api/admin/get_link', { id: id });
+ if (res.status == 1) {
+  const html = translate(temp, {
+   '{ID}': id,
+   '{NAME}': res.data[0].name,
+   '{LINK}': res.data[0].link,
+  });
+  await getModal('Edit link', html);
+ } else await getModal('Edit link', '<div class="error">' + res.message + '</div>');
+}
+
+async function editLink() {
+ const values = {
+  id: qs('.modal .body #form-id').value,
+  name: qs('.modal .body #form-name').value,
+  link: qs('.modal .body #form-link').value,
+ }
+ qs('.modal .body .error').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/edit_link', values);
+ if (res.status == 1) {
+  closeModal();
+  getPage('links');
+ } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
+}
+
 async function deleteLinkModal(id, name) {
  await getModal('Delete link', await getFileContent('html/temp-links-delete.html'));
  const body = qs('.modal .body');
@@ -298,11 +325,10 @@ async function copyServer(id) {
 }
 
 async function editServerModal(id) {
- // TODO get info from api
  const temp = await getFileContent('html/temp-servers-edit.html')
  const res = await getAPI('/api/admin/get_server', { id: id });
  if (res.status == 1) {
-  const server_html = translate(temp, {
+  const html = translate(temp, {
   '{ID}': id,
   '{HOSTNAME}': res.data[0].server,
   '{PORT}': res.data[0].port,
@@ -313,7 +339,7 @@ async function editServerModal(id) {
   '{LINK}': res.data[0].link,
   '{FOOTER}': res.data[0].footer,
   });
-  await getModal('Edit server', server_html);
+  await getModal('Edit server', html);
  } else await getModal('Edit server', '<div class="error">' + res.message + '</div>');
 }
 
@@ -380,9 +406,9 @@ async function getAPI(url, body = null) {
 }
 
 async function getModal(title, body) {
- const modal_html = await getFileContent('html/temp-modal.html');
+ const html = await getFileContent('html/temp-modal.html');
  const modal = document.createElement('div');
- modal.innerHTML = modal_html.replace('{TITLE}', title).replace('{BODY}', body);
+ modal.innerHTML = html.replace('{TITLE}', title).replace('{BODY}', body);
  qs('body').appendChild(modal);
 }
 

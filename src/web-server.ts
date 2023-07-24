@@ -33,6 +33,7 @@ function processAPI(router: Router) {
   '/api/admin/edit_database': apiAdminEditDatabase,
   '/api/admin/delete_database': apiAdminDeleteDatabase,
   '/api/admin/get_links': apiAdminGetLinks,
+  '/api/admin/get_link': apiAdminGetLink,
   '/api/admin/add_link': apiAdminAddLink,
   '/api/admin/edit_link': apiAdminEditLink,
   '/api/admin/delete_link': apiAdminDeleteLink,
@@ -187,6 +188,13 @@ async function apiAdminDeleteDatabase(req: any) {
 
 async function apiAdminGetLinks(req: any) {
  return setData(1, await dbQuery('SELECT l.id, l.name, l.link, COUNT(v.id) AS visits, COUNT(DISTINCT v.ip) AS visits_unique, l.created FROM links l LEFT JOIN visits v ON l.id = v.id_link GROUP BY l.id'));
+}
+
+async function apiAdminGetLink(req: any) {
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Link ID is missing');
+ const link = await dbQuery('SELECT name, link, created FROM links WHERE id = ?', [ req.body.id ]);
+ if (link.length != 1) return setMessage(2, 'Link with this ID does not exist');
+ return setData(1, link);
 }
 
 async function apiAdminAddLink(req: any) {

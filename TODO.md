@@ -10,7 +10,6 @@
   - campaigns (edit)
   - databases (import)
   - links:
-    - edit
     - add more stats data to visits table (browser, resolution etc.) + add summary button for each link
     - add redirect link above stats data table
   - send queue (view, delete - based on campaign or everything)
