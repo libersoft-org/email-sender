@@ -145,12 +145,19 @@ async function editCampaignModal(id) {
   const html = translate(temp, {
   '{ID}': id,
   '{NAME}': res.data[0].name,
-  '{ID_SERVER}': res.data[0].id_server,
   '{VISIBLE_NAME}': res.data[0].visible_name,
   '{SUBJECT}': res.data[0].subject,
   '{BODY}': res.data[0].body
   });
   await getModal('Edit campaign', html);
+  const servers = await getAPI('/api/admin/get_servers');
+  for (let i = 0; i < servers.data.length; i++) {
+   const opt = document.createElement('option');
+   opt.value = servers.data[i].id;
+   if (opt.value == res.data[0].id_server) opt.selected = true;
+   opt.innerHTML = servers.data[i].server;
+   qs('.modal .body #form-server').appendChild(opt);
+  }
  } else await getModal('Edit campaign', '<div class="error">' + res.message + '</div>');
 }
 
@@ -163,11 +170,12 @@ async function editCampaign() {
   subject: qs('.modal .body #form-subject').value,
   body: qs('.modal .body #form-body').value
  }
+ console.log(values);
  qs('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/edit_campaign', values);
  if (res.status == 1) {
   closeModal();
-  getPage('servers');
+  getPage('campaigns');
  } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
 }
 

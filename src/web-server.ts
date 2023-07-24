@@ -28,6 +28,7 @@ function processAPI(router: Router) {
   '/api/admin/add_campaign': apiAdminAddCampaign,
   '/api/admin/send_campaign': apiAdminSendCampaign,
   '/api/admin/copy_campaign': apiAdminCopyCampaign,
+  '/api/admin/edit_campaign': apiAdminEditCampaign,
   '/api/admin/delete_campaign': apiAdminDeleteCampaign,
   '/api/admin/get_databases': apiAdminGetDatabases,
   '/api/admin/add_database': apiAdminAddDatabase,
@@ -112,7 +113,7 @@ async function apiAdminAddCampaign(req: any) {
  if (!isFilled(req.body, 'name')) return setMessage(2, 'Campaign name is missing');
  if (!isFilled(req.body, 'id_server')) return setMessage(2, 'Server ID is missing');
  const res = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id_server ]);
- if (res[0].cnt != 1) return setMessage(2, 'Server with this ID does not exist');
+ if (res[0].cnt != 1) return setMessage(2, 'Server with the provided ID does not exist');
  await dbQuery('INSERT INTO campaigns (name, id_server, visible_name, subject, body) VALUES (?, ?, ?, ?, ?)', [ req.body.name, req.body.id_server, (req.body.visible_name == '' ? null : req.body.visible_name), (req.body.subject == '' ? null : req.body.subject), (req.body.body == '' ? null : req.body.body) ]);
  return setMessage(1, 'New campaign added');
 }
@@ -121,9 +122,9 @@ async function apiAdminSendCampaign(req: any) {
  if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
  if (!isFilled(req.body, 'database')) return setMessage(2, 'Database name is missing');
  const resCampaign = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id ]);
- if (resCampaign[0].cnt != 1) return setMessage(2, 'Campaign with this ID does not exist');
+ if (resCampaign[0].cnt != 1) return setMessage(2, 'Campaign with the provided ID does not exist');
  const resDatabase = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.database ]);
- if (resDatabase.length != 1) return setMessage(2, 'Database with this name does not exist');
+ if (resDatabase.length != 1) return setMessage(2, 'Database with the provided name does not exist');
  await dbQuery('CALL createQueue(?, ?)', [ req.body.database, req.body.id ]);
  return setMessage(1, 'Campaign added to queue');
 }
@@ -131,10 +132,21 @@ async function apiAdminSendCampaign(req: any) {
 async function apiAdminCopyCampaign(req: any) {
  if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
  const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id ]);
- if (resCount[0].cnt != 1) return setMessage(2, 'Campaign with this ID does not exist');
+ if (resCount[0].cnt != 1) return setMessage(2, 'Campaign with the provided ID does not exist');
  const resValues = await dbQuery('SELECT name, id_server, visible_name, subject, body FROM campaigns WHERE id = ?', [ req.body.id ]);
  await dbQuery('INSERT INTO campaigns (name, id_server, visible_name, subject, body) VALUES (?, ?, ?, ?, ?)', [ resValues[0].name, resValues[0].id_server, resValues[0].visible_name, resValues[0].subject, resValues[0].body ]);
  return setMessage(1, 'Campaign successfully copied');
+}
+
+async function apiAdminEditCampaign(req: any) {
+ if (!isFilled(req.body, 'name')) return setMessage(2, 'Campaign name is missing');
+ if (!isFilled(req.body, 'id_server')) return setMessage(2, 'Server ID is missing');
+ const resServer = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id_server ]);
+ if (resServer[0].cnt != 1) return setMessage(2, 'Server with the provided ID does not exist');
+ const resCampaign = await dbQuery('SELECT COUNT(*) AS cnt FROM campaigns WHERE id = ?', [ req.body.id ]);
+ if (resCampaign[0].cnt != 1) return setMessage(2, 'Campaign with the provided ID does not exist');
+ await dbQuery('UPDATE campaigns SET name = ?, id_server = ?, visible_name = ?, subject = ?, body = ? WHERE id = ?', [ req.body.name, req.body.id_server, (req.body.visible_name == '' ? null : req.body.visible_name), (req.body.subject == '' ? null : req.body.subject), (req.body.body == '' ? null : req.body.body), req.body.id ]);
+ return setMessage(1, 'Campaign edited');
 }
 
 async function apiAdminDeleteCampaign(req: any) {
@@ -175,7 +187,7 @@ async function apiAdminEditDatabase(req: any) {
  if (!isFilled(req.body, 'name')) return setMessage(2, 'New database name not defined');
  if (!isFilled(req.body, 'name_old')) return setMessage(2, 'Old database name not defined');
  const table = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.name_old ]);
- if (table.length != 1) return setMessage(2, 'The old database with this name not found');
+ if (table.length != 1) return setMessage(2, 'The old database with the provided name not found');
  const regex = /^[a-z0-9_]+$/;
  if (!regex.test(req.body.name)) return setMessage(2, 'New database name can contain only lower case letters of English alphabet, numbers and underscores');
  await dbQuery('RENAME TABLE ?? TO ??', [ 'recipients_' + req.body.name_old, 'recipients_' + req.body.name ]);
@@ -220,7 +232,7 @@ async function apiAdminEditLink(req: any) {
  if (!regex.test(req.body.name)) return setMessage(2, 'Name can contain only lower case letters of English alphabet and numbers');
  if (!isFilled(req.body, 'link')) return setMessage(2, 'Destination link is missing');
  const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM links WHERE id = ?', [ req.body.id ]);
- if (resCount[0].cnt != 1) return setMessage(2, 'Link with this ID does not exist');
+ if (resCount[0].cnt != 1) return setMessage(2, 'Link with the provided ID does not exist');
  await dbQuery('UPDATE links SET name = ?, link = ? WHERE id = ?', [ req.body.name, req.body.link, req.body.id ]);
  return setMessage(1, 'Link edited');
 }
@@ -245,7 +257,7 @@ async function apiAdminGetServers(req: any) {
 async function apiAdminGetServer(req: any) {
  if (!isFilled(req.body, 'id')) return setMessage(2, 'Server ID is missing');
  const server = await dbQuery('SELECT server, port, secure, auth_user, auth_pass, email, link, footer, created FROM servers WHERE id = ?', [ req.body.id ]);
- if (server.length != 1) return setMessage(2, 'Server with this ID does not exist');
+ if (server.length != 1) return setMessage(2, 'Server with the provided ID does not exist');
  return setData(1, server);
 }
 
@@ -264,7 +276,7 @@ async function apiAdminAddServer(req: any) {
 async function apiAdminCopyServer(req: any) {
  if (!isFilled(req.body, 'id')) return setMessage(2, 'Server ID is missing');
  const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id ]);
- if (resCount[0].cnt != 1) return setMessage(2, 'Server with this ID does not exist');
+ if (resCount[0].cnt != 1) return setMessage(2, 'Server with the provided ID does not exist');
  const resValues = await dbQuery('SELECT server, port, secure, auth_user, auth_pass, email, link, footer FROM servers WHERE id = ?', [ req.body.id ]);
  await dbQuery('INSERT INTO servers (server, port, secure, auth_user, auth_pass, email, link, footer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [ resValues[0].server, resValues[0].port, resValues[0].secure, resValues[0].auth_user, resValues[0].auth_pass, resValues[0].email, resValues[0].link, resValues[0].footer ]);
  return setMessage(1, 'Server successfully copied');
@@ -279,7 +291,7 @@ async function apiAdminEditServer(req: any) {
  if (!isFilled(req.body, 'email')) return setMessage(2, 'E-mail address is missing');
  if (!isFilled(req.body, 'link')) return setMessage(2, 'Web address for links address is missing');
  const resCount = await dbQuery('SELECT COUNT(*) AS cnt FROM servers WHERE id = ?', [ req.body.id ]);
- if (resCount[0].cnt != 1) return setMessage(2, 'Server with this ID does not exist');
+ if (resCount[0].cnt != 1) return setMessage(2, 'Server with the provided ID does not exist');
  await dbQuery('UPDATE servers SET server = ?, port = ?, secure = ?, auth_user = ?, auth_pass = ?, email = ?, link = ?, footer = ? WHERE id = ?', [ req.body.hostname, port, req.body.secure, (req.body.user == '' ? null : req.body.user), (req.body.password == '' ? null : req.body.password), req.body.email, req.body.link, (req.body.footer == '' ? null : req.body.footer), req.body.id ]);
  return setMessage(1, 'Server edited');
 }

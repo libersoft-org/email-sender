@@ -7,7 +7,6 @@
 
 ## Web Server script
 - campaign management UI:
-  - campaigns (edit)
   - databases (import)
   - links:
     - add more stats data to visits table (browser, resolution etc.) + add summary button for each link
