@@ -223,13 +223,26 @@ async function importDatabaseModal(name) {
 }
 
 async function importDatabase() {
- const values = { name: qs('.modal .body #form-name').value }
- qs('.modal .body .error').innerHTML = getLoader();
- const res = await getAPI('/api/admin/import_database', values);
- if (res.status == 1) {
-  closeModal();
-  getPage('databases');
- } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
+ const file = qs('.modal .body #form-file').files[0];
+ if (file) {
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+   qs('.modal .body #form-file-content').value = e.target.result;
+   const values = {
+    name: qs('.modal .body #form-name').value,
+    content: qs('.modal .body #form-file-content').value
+   }
+   qs('.modal .body .error').innerHTML = getLoader();
+   const res = await getAPI('/api/admin/import_database', values);
+   if (res.status == 1) {
+    closeModal();
+    getPage('databases');
+   } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
+  };
+  reader.readAsText(file);
+ } else {
+  qs('.modal .body .error').innerHTML = 'Error: File not selected';
+ }
 }
 
 async function editDatabaseModal(name) {

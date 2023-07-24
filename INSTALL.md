@@ -65,15 +65,7 @@ cd email-sender/src
 ./create-db.sh
 ```
 
-6. Import your e-mail list to your database:
-
-```sh
-./import-db.sh "[FILE.TXT]"
-```
-
-(replace **[FILE.TXT]** with your actual e-mail list in TXT file - you can find the example file in "import-db_example.txt")
-
-7. Run the **Mail Sender** and **Web Server** in screen:
+6. Run the **Mail Sender** and **Web Server** in screen:
 
 ```sh
 ./mail-sender-screen.sh
@@ -82,7 +74,7 @@ cd email-sender/src
 
 If you don't want to run the **Mail Sender** or **Web Server** in screen, just use **./mail-sender.sh** or **./web-server.sh** instead.
 
-8. You can access the screen:
+7. You can access the screen:
 
 **Mail Sender:**
 ```sh

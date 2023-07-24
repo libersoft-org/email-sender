@@ -49,11 +49,13 @@ function processAPI(router: Router) {
  };
  for (const route in routes) router.post(route, async (ctx: any) => {
   if (ctx.request.body().type === 'json') {
+   const body = ctx.request.body({ type: "json", limit: 500000000 });
    // TODO: check if admin is logged in on all /api/admin/*
    ctx.response.body = await routes[route]({
-    body: await ctx.request.body().value,
+    body: await body.value,
     ip: ctx.request.ip
    });
+
   } else ctx.response.body = setMessage(2, 'Request is not in JSON format');
  });
 }
@@ -187,8 +189,20 @@ async function apiAdminAddDatabase(req: any) {
 async function apiAdminImportDatabase(req: any) {
  const table = await dbQuery('SHOW TABLES WHERE ?? = ?', [ 'Tables_in_' + settings.mysql.database, 'recipients_' + req.body.name ]);
  if (table.length != 1) return setMessage(2, 'The database with the provided name not found');
- // TODO: get file
- console.log(req);
+ req.body.content = req.body.content.replaceAll("\r", '');
+ const emails = req.body.content.split("\n");
+ const queries: string[] = []
+ for (let i = 0; i < emails.length; i++) {
+  emails[i] = emails[i].trim();
+  if (emails[i] != '') queries.push('INSERT IGNORE INTO recipients_' + req.body.name + ' (email) VALUES ("' + emails[i] + '")');
+ }
+ try {
+  await dbMultiQuery(queries);
+  return setMessage(1, 'Database imported');
+ } catch (ex) {
+  setLog('Error:' + ex);
+  return setMessage(2, 'Error during import'); 
+ }
 }
 
 async function apiAdminEditDatabase(req: any) {
@@ -359,6 +373,19 @@ async function dbQuery(query: string, params: any[] = []) {
   const res: any = await mysqlClient.query(query, params);
   await dbDisconnect();
   return res;
+ } catch (ex) {
+  setLog('Error: MySQL query failed.');
+  setLog('Query: ' + query);
+  setLog('Parameters: ' + params);
+  setLog('Exception: ' + ex);
+ }
+}
+
+async function dbMultiQuery(query: string[]) {
+ try {
+  await dbConnect();
+  for (let i = 0; i < query.length; i++) await mysqlClient.query(query[i]);
+  await dbDisconnect();
  } catch (ex) {
   setLog('Error: MySQL query failed.');
   setLog('Query: ' + query);
