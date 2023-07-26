@@ -40,7 +40,7 @@ async function getPageContent(page) {
 }
 
 async function getMenu() {
- const temp = await getFileContent('html/temp-menu.html');
+ const temp = await getFileContent('html/menu.html');
  const pages = JSON.parse(await getFileContent('pages.json'));
  let html = '';
  for (const page in pages) {
@@ -65,7 +65,7 @@ async function getPageData(template, api, trans) {
 }
 
 async function getCampaigns() {
- await getPageData('html/temp-campaigns-row.html', await getAPI('/api/admin/get_campaigns'), (item) => ({
+ await getPageData('html/campaigns-row.html', await getAPI('/api/admin/get_campaigns'), (item) => ({
   '{ID}': item.id,
   '{NAME}': item.name,
   '{SERVER}': item.server + ' (' + item.id_server + ')',
@@ -74,7 +74,7 @@ async function getCampaigns() {
 }
 
 async function addCampaignModal() {
- await getModal('New campaign', await getFileContent('html/temp-campaigns-add.html'));
+ await getModal('New campaign', await getFileContent('html/campaigns-add.html'));
  const servers = await getAPI('/api/admin/get_servers');
  for (let i = 0; i < servers.data.length; i++) {
   const opt = document.createElement('option');
@@ -101,7 +101,7 @@ async function addCampaign() {
 }
 
 async function sendCampaignModal(id, name) {
- await getModal('Send campaign', await getFileContent('html/temp-campaigns-send.html'));
+ await getModal('Send campaign', await getFileContent('html/campaigns-send.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
  const databases = await getAPI('/api/admin/get_databases');
@@ -124,7 +124,7 @@ async function sendCampaign(id) {
 }
 
 async function copyCampaignModal(id, name) {
- await getModal('Copy campaign', await getFileContent('html/temp-campaigns-copy.html'));
+ await getModal('Copy campaign', await getFileContent('html/campaigns-copy.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
 }
@@ -139,7 +139,7 @@ async function copyCampaign(id) {
 }
 
 async function editCampaignModal(id) {
- const temp = await getFileContent('html/temp-campaigns-edit.html')
+ const temp = await getFileContent('html/campaigns-edit.html')
  const res = await getAPI('/api/admin/get_campaign', { id: id });
  if (res.status == 1) {
   const html = translate(temp, {
@@ -181,7 +181,7 @@ async function editCampaign() {
 
 
 async function deleteCampaignModal(id, name) {
- await getModal('Delete campaign', await getFileContent('html/temp-campaigns-delete.html'));
+ await getModal('Delete campaign', await getFileContent('html/campaigns-delete.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
 }
@@ -196,14 +196,14 @@ async function deleteCampaign(id) {
 }
 
 async function getDatabases() {
- await getPageData('html/temp-databases-row.html', await getAPI('/api/admin/get_databases'), (item) => ({
+ await getPageData('html/databases-row.html', await getAPI('/api/admin/get_databases'), (item) => ({
   '{NAME}': item.database,
   '{CONTACTS}': item.count,
  }));
 }
 
 async function addDatabaseModal() {
- await getModal('New database', await getFileContent('html/temp-databases-add.html'));
+ await getModal('New database', await getFileContent('html/databases-add.html'));
 }
 
 async function addDatabase() {
@@ -217,7 +217,7 @@ async function addDatabase() {
 }
 
 async function importDatabaseModal(name) {
- await getModal('Import contacts to database', await getFileContent('html/temp-databases-import.html'));
+ await getModal('Import contacts to database', await getFileContent('html/databases-import.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{NAME}', name);
 }
@@ -246,7 +246,7 @@ async function importDatabase() {
 }
 
 async function editDatabaseModal(name) {
- await getModal('Edit database', await getFileContent('html/temp-databases-edit.html'));
+ await getModal('Edit database', await getFileContent('html/databases-edit.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{NAME}', name);
 }
@@ -265,7 +265,7 @@ async function editDatabase() {
 }
 
 async function deleteDatabaseModal(name) {
- await getModal('Delete database', await getFileContent('html/temp-databases-delete.html'));
+ await getModal('Delete database', await getFileContent('html/databases-delete.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{NAME}', name);
 }
@@ -280,7 +280,7 @@ async function deleteDatabase(name) {
 }
 
 async function getLinks() {
- await getPageData('html/temp-links-row.html', await getAPI('/api/admin/get_links'), (item) => ({
+ await getPageData('html/links-row.html', await getAPI('/api/admin/get_links'), (item) => ({
   '{ID}': item.id,
   '{NAME}': item.name,
   '{LINK}': (item.link.length >= 30 ? item.link.slice(0, 30) + '...' : item.link),
@@ -290,7 +290,7 @@ async function getLinks() {
 }
 
 async function addLinkModal() {
- await getModal('New link', await getFileContent('html/temp-links-add.html'));
+ await getModal('New link', await getFileContent('html/links-add.html'));
 }
 
 async function addLink() {
@@ -307,7 +307,7 @@ async function addLink() {
 }
 
 async function editLinkModal(id) {
- const temp = await getFileContent('html/temp-links-edit.html')
+ const temp = await getFileContent('html/links-edit.html')
  const res = await getAPI('/api/admin/get_link', { id: id });
  if (res.status == 1) {
   const html = translate(temp, {
@@ -334,7 +334,7 @@ async function editLink() {
 }
 
 async function deleteLinkModal(id, name) {
- await getModal('Delete link', await getFileContent('html/temp-links-delete.html'));
+ await getModal('Delete link', await getFileContent('html/links-delete.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
 }
@@ -349,7 +349,7 @@ async function deleteLink(id) {
 }
 
 async function getServers() {
- await getPageData('html/temp-servers-row.html', await getAPI('/api/admin/get_servers'), (item) => ({
+ await getPageData('html/servers-row.html', await getAPI('/api/admin/get_servers'), (item) => ({
   '{ID}': item.id,
   '{NAME}': item.server,
   '{EMAIL}': item.email,
@@ -358,7 +358,7 @@ async function getServers() {
 }
 
 async function addServerModal() {
- await getModal('New server', await getFileContent('html/temp-servers-add.html'));
+ await getModal('New server', await getFileContent('html/servers-add.html'));
 }
 
 async function addServer() {
@@ -381,7 +381,7 @@ async function addServer() {
 }
 
 async function copyServerModal(id, name) {
- await getModal('Copy server', await getFileContent('html/temp-servers-copy.html'));
+ await getModal('Copy server', await getFileContent('html/servers-copy.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
 }
@@ -396,7 +396,7 @@ async function copyServer(id) {
 }
 
 async function editServerModal(id) {
- const temp = await getFileContent('html/temp-servers-edit.html')
+ const temp = await getFileContent('html/servers-edit.html')
  const res = await getAPI('/api/admin/get_server', { id: id });
  if (res.status == 1) {
   const html = translate(temp, {
@@ -435,7 +435,7 @@ async function editServer() {
 }
 
 async function deleteServerModal(id, name) {
- await getModal('Delete server', await getFileContent('html/temp-servers-delete.html'));
+ await getModal('Delete server', await getFileContent('html/servers-delete.html'));
  const body = qs('.modal .body');
  body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
 }
@@ -450,11 +450,48 @@ async function deleteServer(id) {
 }
 
 async function getQueue() {
- await getPageData('html/temp-queue-row.html', await getAPI('/api/admin/get_queue'), (item) => ({
-  '{ID}': item.id,
-  '{CAMPAIGN}': item.campaign,
-  '{STATE}': item.state
+ const queue = await getAPI('/api/admin/get_queue');
+ let statuses = [ 'Unsent', 'Sent', 'Error' ];
+ for (let i = 0; i < queue.data.length; i++) {
+  const counts = await(getAPI('/api/admin/get_queue_counts', { id: queue.data[i].id_campaign }));
+  queue.data[i].counts_html = '';
+  for (let j = 0; j < counts.data.length; j++) {
+   queue.data[i].counts_html += '<a onclick="deleteQueueCampaignModal(' + queue.data[i].id_campaign + ', ' + queue.data[i].name + ', ' + counts.data[j].state + ', ' + statuses[counts.data[j].state] + ')"><img src="./img/delete.svg" alt="Delete"></img></a> ' + statuses[counts.data[j].state] + ' - <span class="bold">' + counts.data[j].cnt + '</span><br />';
+  }
+ }
+ await getPageData('html/queue-row.html', queue, (item) => ({
+  '{CAMPAIGN_ID}': item.id_campaign,
+  '{CAMPAIGN_NAME}': item.name,
+  '{STATUS}': item.counts_html
  }));
+}
+
+async function deleteQueueModal() {
+ await getModal('Delete all from queue', await getFileContent('html/queue-delete.html'));
+}
+
+async function deleteQueue() {
+ qs('.modal .body').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/delete_queue');
+ if (res.status == 1) {
+  closeModal();
+  getPage('queue');
+ } else qs('.modal .body').innerHTML = res.message;
+}
+
+async function deleteQueueCampaignModal(id, name) {
+ await getModal('Delete campaign messages from queue', await getFileContent('html/queue-delete-campaign.html'));
+ const body = qs('.modal .body');
+ body.innerHTML = body.innerHTML.replaceAll('{ID}', id).replaceAll('{NAME}', name);
+}
+
+async function deleteQueueCampaign(id, status = null) {
+ qs('.modal .body').innerHTML = getLoader();
+ const res = await getAPI('/api/admin/delete_queue_campaign', status == null ? { id: id } : { id: id, status: status } );
+ if (res.status == 1) {
+  closeModal();
+  getPage('queue');
+ } else qs('.modal .body').innerHTML = res.message;
 }
 
 async function getFileContent(file) {
@@ -477,7 +514,7 @@ async function getAPI(url, body = null) {
 }
 
 async function getModal(title, body) {
- const html = await getFileContent('html/temp-modal.html');
+ const html = await getFileContent('html/modal.html');
  const modal = document.createElement('div');
  modal.innerHTML = html.replace('{TITLE}', title).replace('{BODY}', body);
  qs('body').appendChild(modal);

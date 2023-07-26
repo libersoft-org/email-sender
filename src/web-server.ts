@@ -47,14 +47,13 @@ function processAPI(router: Router) {
   '/api/admin/edit_server': apiAdminEditServer,
   '/api/admin/delete_server': apiAdminDeleteServer,
   '/api/admin/get_queue': apiAdminGetQueue,
-  '/api/admin/get_queue_count': apiAdminGetQueueCount,
+  '/api/admin/get_queue_counts': apiAdminGetQueueCounts,
   '/api/admin/delete_queue': apiAdminDeleteQueue,
-  '/api/admin/delete_queue_campaign': apiAdminDeleteQueueCampaign,
-  '/api/admin/delete_queue_status': apiAdminDeleteQueueStatus,
+  '/api/admin/delete_queue_campaign': apiAdminDeleteQueueCampaign
  };
  for (const route in routes) router.post(route, async (ctx: any) => {
   if (ctx.request.body().type === 'json') {
-   const body = ctx.request.body({ type: "json", limit: 500000000 });
+   const body = ctx.request.body({ type: 'json', limit: 500000000 });
    // TODO: check if admin is logged in on all /api/admin/*
    ctx.response.body = await routes[route]({
     body: await body.value,
@@ -338,33 +337,30 @@ async function apiAdminDeleteServer(req: any) {
 }
 
 async function apiAdminGetQueue() {
- return setData(1, await dbQuery('SELECT id_campaign FROM queue GROUP BY id_campaign ORDER BY id DESC'));
+ return setData(1, await dbQuery('SELECT q.id_campaign, c.name FROM queue q, campaigns c WHERE q.id_campaign = c.id GROUP BY q.id_campaign ORDER BY q.id DESC'));
 }
 
-async function apiAdminGetQueueCount(req: any) {
+async function apiAdminGetQueueCounts(req: any) {
  if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
  return setData(1, await dbQuery('SELECT state, COUNT(*) AS cnt FROM queue WHERE id_campaign = ? GROUP BY state ORDER BY state', [ req.body.id ]));
 }
 
 async function apiAdminDeleteQueue(req: any) {
  await dbQuery('DELETE FROM queue', [ req.body.id ]);
- return setMessage(1, "Queue deleted");
+ return setMessage(1, 'Queue deleted');
 }
 
 async function apiAdminDeleteQueueCampaign(req: any) {
- if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
- const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id ])
+ if (!isFilled(req.body, 'id_campaign')) return setMessage(2, 'Campaign ID is missing');
+ const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id_campaign ]);
  if (cnt[0].cnt != 1) return setMessage(2, 'The campaign with the provided ID is not in queue');
- await dbQuery('DELETE FROM queue WHERE id_campaign = ?', [ req.body.id ]);
- return setMessage(1, "Campaign messages deleted from queue");
-}
-
-async function apiAdminDeleteQueueStatus(req: any) {
- if (!isFilled(req.body, 'status')) return setMessage(2, 'Status code is missing');
- const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE state = ?', [ req.body.status ])
- if (cnt[0].cnt != 1) return setMessage(2, 'The campaign with the provided status code is not in queue');
- await dbQuery('DELETE FROM queue WHERE status = ?', [ req.body.id ]);
- return setMessage(1, "Messages with the provided status deleted from queue");
+ if (isFilled(req.body, 'status')) {
+  await dbQuery('DELETE FROM queue WHERE id_campaign = ? AND status = ?', [ req.body.id_campaign, req.body.status ]);
+  return setMessage(1, 'Campaign messages with the provided status code deleted from queue');
+ } else {
+  await dbQuery('DELETE FROM queue WHERE id_campaign = ?', [ req.body.id ]);
+  return setMessage(1, 'Campaign messages deleted from queue');
+ }
 }
 
 function isFilled(object: any, propertyName: string): boolean {
