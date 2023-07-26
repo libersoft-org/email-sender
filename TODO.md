@@ -7,7 +7,7 @@
 
 ## Web Server script
 - campaign management UI:
-  - send queue (view, delete - based on campaign or everything)
+  - send queue (delete)
   - links:
     - add more stats data to visits table (browser, resolution etc.) + add summary button for each link
     - add redirect link above stats data table
