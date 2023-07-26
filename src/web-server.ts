@@ -46,6 +46,11 @@ function processAPI(router: Router) {
   '/api/admin/copy_server': apiAdminCopyServer,
   '/api/admin/edit_server': apiAdminEditServer,
   '/api/admin/delete_server': apiAdminDeleteServer,
+  '/api/admin/get_queue': apiAdminGetQueue,
+  '/api/admin/get_queue_count': apiAdminGetQueueCount,
+  '/api/admin/delete_queue': apiAdminDeleteQueue,
+  '/api/admin/delete_queue_campaign': apiAdminDeleteQueueCampaign,
+  '/api/admin/delete_queue_status': apiAdminDeleteQueueStatus,
  };
  for (const route in routes) router.post(route, async (ctx: any) => {
   if (ctx.request.body().type === 'json') {
@@ -101,7 +106,7 @@ async function isEmailInDatabase(email: string) {
  } else return false;
 }
 
-async function apiAdminGetCampaigns(req: any) {
+async function apiAdminGetCampaigns() {
  return setData(1, await dbQuery('SELECT c.id, c.name, c.id_server, s.server, c.subject, c.body, c.created FROM campaigns c, servers s WHERE s.id = c.id_server ORDER BY c.id DESC'));
 }
 
@@ -166,11 +171,11 @@ async function apiAdminDeleteCampaign(req: any) {
  }
 }
 
-async function apiAdminGetDatabases(req: any) {
+async function apiAdminGetDatabases() {
  const databases = await dbQuery('SHOW TABLES LIKE "recipients_%"');
  const dbs = [];
  for (let i = 0; i < databases.length; i++) {
-  for (let k in databases[i]) {
+  for (const k in databases[i]) {
    const count = await dbQuery('SELECT COUNT(*) AS cnt FROM ??', [ databases[i][k] ]);
    dbs.push({ database: databases[i][k].substring(11), count: count[0].cnt });
   }
@@ -228,7 +233,7 @@ async function apiAdminDeleteDatabase(req: any) {
  }
 }
 
-async function apiAdminGetLinks(req: any) {
+async function apiAdminGetLinks() {
  return setData(1, await dbQuery('SELECT l.id, l.name, l.link, COUNT(v.id) AS visits, COUNT(DISTINCT v.ip) AS visits_unique, l.created FROM links l LEFT JOIN visits v ON l.id = v.id_link GROUP BY l.id'));
 }
 
@@ -272,7 +277,7 @@ async function apiAdminDeleteLink(req: any) {
  }
 }
 
-async function apiAdminGetServers(req: any) {
+async function apiAdminGetServers() {
  return setData(1, await dbQuery('SELECT id, server, email, created FROM servers ORDER BY id DESC'));
 }
 
@@ -332,8 +337,38 @@ async function apiAdminDeleteServer(req: any) {
  }
 }
 
+async function apiAdminGetQueue() {
+ return setData(1, await dbQuery('SELECT id_campaign FROM queue GROUP BY id_campaign ORDER BY id DESC'));
+}
+
+async function apiAdminGetQueueCount(req: any) {
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
+ return setData(1, await dbQuery('SELECT state, COUNT(*) AS cnt FROM queue WHERE id_campaign = ? GROUP BY state ORDER BY state', [ req.body.id ]));
+}
+
+async function apiAdminDeleteQueue(req: any) {
+ await dbQuery('DELETE FROM queue', [ req.body.id ]);
+ return setMessage(1, "Queue deleted");
+}
+
+async function apiAdminDeleteQueueCampaign(req: any) {
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
+ const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id ])
+ if (cnt[0].cnt != 1) return setMessage(2, 'The campaign with the provided ID is not in queue');
+ await dbQuery('DELETE FROM queue WHERE id_campaign = ?', [ req.body.id ]);
+ return setMessage(1, "Campaign messages deleted from queue");
+}
+
+async function apiAdminDeleteQueueStatus(req: any) {
+ if (!isFilled(req.body, 'status')) return setMessage(2, 'Status code is missing');
+ const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE state = ?', [ req.body.status ])
+ if (cnt[0].cnt != 1) return setMessage(2, 'The campaign with the provided status code is not in queue');
+ await dbQuery('DELETE FROM queue WHERE status = ?', [ req.body.id ]);
+ return setMessage(1, "Messages with the provided status deleted from queue");
+}
+
 function isFilled(object: any, propertyName: string): boolean {
- return object.hasOwnProperty(propertyName) && object[propertyName] != '';
+ return Object.prototype.hasOwnProperty.call(object, propertyName) && object[propertyName] != '';
 }
 
 function setMessage(status: number, message: string) {
@@ -389,7 +424,6 @@ async function dbMultiQuery(query: string[]) {
  } catch (ex) {
   setLog('Error: MySQL query failed.');
   setLog('Query: ' + query);
-  setLog('Parameters: ' + params);
   setLog('Exception: ' + ex);
  }
 }
