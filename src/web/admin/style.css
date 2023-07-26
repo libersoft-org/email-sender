@@ -32,6 +32,11 @@ table {
  overflow: hidden;
 }
 
+table a {
+ font-weight: normal;
+ text-decoration: underline;
+}
+
 table.center {
  margin: 0 auto;
 }

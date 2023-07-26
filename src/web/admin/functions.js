@@ -283,7 +283,8 @@ async function getLinks() {
  await getPageData('html/links-row.html', await getAPI('/api/admin/get_links'), (item) => ({
   '{ID}': item.id,
   '{NAME}': item.name,
-  '{LINK}': (item.link.length >= 30 ? item.link.slice(0, 30) + '...' : item.link),
+  '{LINK}': item.link,
+  '{LINK_LABEL}': (item.link.length >= 30 ? item.link.slice(0, 30) + '...' : item.link),
   '{VISITS}': item.visits + ' / ' + item.visits_unique,
   '{CREATED}': new Date(item.created).toLocaleString()
  }));
