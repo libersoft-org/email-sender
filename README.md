@@ -36,7 +36,7 @@ It is designed to work well in [**Linux**](https://www.linux.org/) OS, but might
 ## Content
 
 - **MySQL / MariaDB database** - The place where all the data are stored (campaigns, e-mail lists, e-mails to send, list of servers used for sending e-mails, list of the people who have unsubscribed their e-mail etc.)
-- **E-mail Sender script** - This script periodically checks the "sending" table in the database for new email messages to be sent. This runs constantly on the server (we recommend that this should be running in the background in the screen application).
+- **E-mail Sender script** - This script periodically checks the "queue" table in the database for new email messages to be sent. This runs constantly on the server (we recommend that this should be running in the background in the screen application).
 - **Web Server** - This multifunctional software encompasses:
   - **API** - For connecting web UIs (campaign management and unsubscribe page) with your database.
   - **Campaign management web UI** - Provides easy management of campaigns and other related tasks.
