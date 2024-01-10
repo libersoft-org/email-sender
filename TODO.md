@@ -1,25 +1,25 @@
 # TODO:
 
 ## Mail Sender script
-- disable INFO log level on dbConnect and dbDisconnect
-- automated link rewriter with stats in web UI
+HOTOVO - disable INFO log level on dbConnect and dbDisconnect
+- automated link rewriter with stats in web UI - NA TOHLE UZ JSOU NASTROJE, ROZJEL JSEM EXAMPLE NA http://www8.yourls.wsad.cz/admin/ (username, password)
 - replace {UNSUBSCRIBE} in mail body in queue to what is in servers.footer column based on which server is used by campaign
 
 ## Web Server script
 - campaign management UI:
-  - send queue (delete)
-  - links:
+  - HOTOVO - send queue (delete)
+  - links (viz. nahore http://www8.yourls.wsad.cz/admin/):
     - add more stats data to visits table (browser, resolution etc.) + add summary button for each link
     - add redirect link above stats data table
-  - admin API - add login / logout + token
-  - modal - close on escape, confirm on enter, autofocus the first input
+  HOTOVO - admin API - add login / logout + token
+  - HOTOVO -modal - close on escape, confirm on enter, autofocus the first input
   - modal window:
-    - add drag and drop move
-    - add resize
-    - fix scrollbar in modal body
-    - fix max-width
+    - TOHLE JE PODLE ME ZBYTECNY - add drag and drop move
+    HOTOVO - add resize
+    HOTOVO - fix scrollbar in modal body
+    HOTOVO - fix max-width
   - add mobile responsive design
-  - when scrolled down and then clicked on something that shows modal, then modal appears at the top of the page
+  - HOTOVO - when scrolled down and then clicked on something that shows modal, then modal appears at the top of the page
   - campaigns, databases, servers, short links, queue - add paging to API and frontend
 
 ## Other

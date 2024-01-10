@@ -3,9 +3,17 @@ let pages;
 
 window.onload = async () => {
  let pg = location.pathname.substring(location.pathname.lastIndexOf('/') + 1);
+ if(location.pathname.lastIndexOf('admin') == -1)
+  return;
  await getMenu();
  getReload(pg);
  window.addEventListener('popstate', async function(e) { getReload(pg); });
+ document.addEventListener("keyup", function(e){
+  if(e.key == "Escape")
+    closeModal();
+  else if(e.key == "Enter" && e.target.tagName.toLowerCase() != 'textarea')
+    qs("#form-confirm").click();
+ });
 }
 
 async function getReload(page) {
@@ -170,7 +178,6 @@ async function editCampaign() {
   subject: qs('.modal .body #form-subject').value,
   body: qs('.modal .body #form-body').value
  }
- console.log(values);
  qs('.modal .body .error').innerHTML = getLoader();
  const res = await getAPI('/api/admin/edit_campaign', values);
  if (res.status == 1) {
@@ -179,6 +186,18 @@ async function editCampaign() {
  } else qs('.modal .body .error').innerHTML = 'Error: ' + res.message;
 }
 
+async function login(username, password) {
+    const res = await getAPI('/api/login', {username: username, password: password});
+    if(res && res.status == 1 && res.message){
+      localStorage.setItem("auth", res.message);
+      location.href = "./admin/";
+    }
+}
+
+async function logout() {
+  localStorage.removeItem("auth");
+  location.href = "../";
+}
 
 async function deleteCampaignModal(id, name) {
  await getModal('Delete campaign', await getFileContent('html/campaigns-delete.html'));
@@ -501,16 +520,25 @@ async function getFileContent(file) {
 }
 
 async function getAPI(url, body = null) {
+ var jwt = localStorage.getItem("auth");
  const post = body != null ? {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', 'auth': jwt },
   body: JSON.stringify(body)
  } : {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json', 'auth': jwt  }
  };
  const res = await fetch(url, post);
- if (res.ok) return await res.json();
+ if (res.ok){
+   const ret =  await res.json();
+   if(ret.status && ret.status == 401)
+    {
+        location.href = "/";
+        return false;
+    }
+   return ret;
+ }
  else return false;
 }
 
@@ -519,10 +547,15 @@ async function getModal(title, body) {
  const modal = document.createElement('div');
  modal.innerHTML = html.replace('{TITLE}', title).replace('{BODY}', body);
  qs('body').appendChild(modal);
+ setTimeout(function(){
+  var focusEl = qs('.modal input[type=text], .modal input[type=number], .modal input[type=password], .modal textarea');
+  if(focusEl)
+    focusEl.focus();
+ }, 10);
 }
 
 function closeModal() {
- qs('.modal').remove();
+ qs('.modal-data').remove();
 }
 
 function getLoader() {

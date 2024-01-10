@@ -1,5 +1,6 @@
 import { Client } from 'https://deno.land/x/mysql/mod.ts';
 import { SMTPClient } from 'https://deno.land/x/denomailer/mod.ts';
+import { sleep } from "https://deno.land/x/sleep/mod.ts";
 
 interface MailServer { server: string; port: number; secure: boolean; auth_user: string; auth_pass: string; email: string, link: string; }
 interface Campaign { visible_name: string; body: string; subject: string; }
@@ -87,6 +88,7 @@ function mailConnect() {
 
 async function mailDisconnect() {
  try {
+    if(smtpClient.is)
   await smtpClient.close();
  } catch {
   setLog('Error: Could not disconnect from the mail server.');
@@ -113,10 +115,10 @@ async function sendMail(id: number, from_name: string, from_email: string, to_na
 async function sendMailsLoop() {
  while (true) {
   await dbConnect();
-  mailConnect();
   setLog('Loading e-mails to send ...');
   const toSend = await mysqlClient.query('SELECT q.id, q.email, q.id_campaign FROM queue q, campaigns c WHERE q.state = 0 AND c.id = q.id_campaign AND c.id_server = ?', [Deno.args[0]]);
   if (toSend.length > 0) {
+    mailConnect();
    setLog('Found ' + toSend.length + ' e-mail' + (toSend.length != 1 ? 's' : '') + ' to send ...');
    for (let i = 0; i < toSend.length; i++) {
     if (campaigns[toSend[i].id_campaign] === undefined) {
@@ -137,17 +139,13 @@ async function sendMailsLoop() {
      campaigns[toSend[i].id_campaign].body.replace('{unsubscribe}', mailServer.link + (!mailServer.link.endsWith('/') ? '/' : '') + 'unsubscribe?email=' + toSend[i].email)
     );
    }
-   await mailDisconnect();
-   await dbDisconnect();
+    await mailDisconnect();
   } else {
-   setLog('Nothing to send - waiting for ' + settings.other.wait / 1000 + ' secs ...')
-   await sleep(settings.other.wait);
+   setLog('Nothing to send - waiting for ' + settings.other.wait / 1000 + ' secs ...');
+   await sleep(settings.other.wait / 1000);
   }
+  await dbDisconnect();
  }
-}
-
-function sleep(milliseconds: number): Promise<void> {
- return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
 function setLog(message: string) {

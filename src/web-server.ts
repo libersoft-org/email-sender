@@ -1,14 +1,20 @@
 import { Application, Router, send } from 'https://deno.land/x/oak/mod.ts';
-import { Client } from 'https://deno.land/x/mysql/mod.ts';
+import { Client, configLogger } from 'https://deno.land/x/mysql/mod.ts';
 import { exists } from 'https://deno.land/std/fs/mod.ts';
-
+import {verify, create} from "https://deno.land/x/djwt@v3.0.1/mod.ts";
 let settings: any;
 let mysqlClient: Client;
-const port = 80;
+const port = 4200;
+
+const jwtKey = await crypto.subtle.generateKey(
+    { name: "HMAC", hash: "SHA-512" },
+    true,
+    ["sign", "verify"],
+);
 
 start();
-
 async function start() {
+ await configLogger({ enable: false });
  await loadSettings('settings.json');
  const app = new Application();
  const router = new Router();
@@ -21,62 +27,107 @@ async function start() {
 }
 
 function processAPI(router: Router) {
- const routes: { [key: string]: (req: any) => Promise<any> } = {
-  '/api/unsubscribe': apiUnsubscribe,
-  '/api/admin/get_campaigns': apiAdminGetCampaigns,
-  '/api/admin/get_campaign': apiAdminGetCampaign,
-  '/api/admin/add_campaign': apiAdminAddCampaign,
-  '/api/admin/send_campaign': apiAdminSendCampaign,
-  '/api/admin/copy_campaign': apiAdminCopyCampaign,
-  '/api/admin/edit_campaign': apiAdminEditCampaign,
-  '/api/admin/delete_campaign': apiAdminDeleteCampaign,
-  '/api/admin/get_databases': apiAdminGetDatabases,
-  '/api/admin/add_database': apiAdminAddDatabase,
-  '/api/admin/import_database': apiAdminImportDatabase,
-  '/api/admin/edit_database': apiAdminEditDatabase,
-  '/api/admin/delete_database': apiAdminDeleteDatabase,
-  '/api/admin/get_links': apiAdminGetLinks,
-  '/api/admin/get_link': apiAdminGetLink,
-  '/api/admin/add_link': apiAdminAddLink,
-  '/api/admin/edit_link': apiAdminEditLink,
-  '/api/admin/delete_link': apiAdminDeleteLink,
-  '/api/admin/get_servers': apiAdminGetServers,
-  '/api/admin/get_server': apiAdminGetServer,
-  '/api/admin/add_server': apiAdminAddServer,
-  '/api/admin/copy_server': apiAdminCopyServer,
-  '/api/admin/edit_server': apiAdminEditServer,
-  '/api/admin/delete_server': apiAdminDeleteServer,
-  '/api/admin/get_queue': apiAdminGetQueue,
-  '/api/admin/get_queue_counts': apiAdminGetQueueCounts,
-  '/api/admin/delete_queue': apiAdminDeleteQueue,
-  '/api/admin/delete_queue_campaign': apiAdminDeleteQueueCampaign
- };
- for (const route in routes) router.post(route, async (ctx: any) => {
-  if (ctx.request.body().type === 'json') {
-   const body = ctx.request.body({ type: 'json', limit: 500000000 });
-   // TODO: check if admin is logged in on all /api/admin/*
-   ctx.response.body = await routes[route]({
-    body: await body.value,
-    ip: ctx.request.ip
-   });
+    const routes: { [key: string]: (req: any) => Promise<any> } = {
+    '/api/admin/get_campaigns': apiAdminGetCampaigns,
+    '/api/admin/get_campaign': apiAdminGetCampaign,
+    '/api/admin/add_campaign': apiAdminAddCampaign,
+    '/api/admin/send_campaign': apiAdminSendCampaign,
+    '/api/admin/copy_campaign': apiAdminCopyCampaign,
+    '/api/admin/edit_campaign': apiAdminEditCampaign,
+    '/api/admin/delete_campaign': apiAdminDeleteCampaign,
+    '/api/admin/get_databases': apiAdminGetDatabases,
+    '/api/admin/add_database': apiAdminAddDatabase,
+    '/api/admin/import_database': apiAdminImportDatabase,
+    '/api/admin/edit_database': apiAdminEditDatabase,
+    '/api/admin/delete_database': apiAdminDeleteDatabase,
+    '/api/admin/get_links': apiAdminGetLinks,
+    '/api/admin/get_link': apiAdminGetLink,
+    '/api/admin/add_link': apiAdminAddLink,
+    '/api/admin/edit_link': apiAdminEditLink,
+    '/api/admin/delete_link': apiAdminDeleteLink,
+    '/api/admin/get_servers': apiAdminGetServers,
+    '/api/admin/get_server': apiAdminGetServer,
+    '/api/admin/add_server': apiAdminAddServer,
+    '/api/admin/copy_server': apiAdminCopyServer,
+    '/api/admin/edit_server': apiAdminEditServer,
+    '/api/admin/delete_server': apiAdminDeleteServer,
+    '/api/admin/get_queue': apiAdminGetQueue,
+    '/api/admin/get_queue_counts': apiAdminGetQueueCounts,
+    '/api/admin/delete_queue': apiAdminDeleteQueue,
+    '/api/admin/delete_queue_campaign': apiAdminDeleteQueueCampaign,
+    };
 
-  } else ctx.response.body = setMessage(2, 'Request is not in JSON format');
- });
+    const routesWithoutLogin: { [key: string]: (req: any) => Promise<any> } = {
+        '/api/login': apiLogin,
+        '/api/unsubscribe': apiUnsubscribe,
+    };
+  
+    for (const route in routes) router.post(route, async (ctx: any) => {
+    if (ctx.request.body().type === 'json') {
+        var notLoggedResponse = await isLogged(ctx);
+        if(notLoggedResponse != null)
+            ctx.response.body = notLoggedResponse;
+        else
+            await processPost(routes, route, ctx);
+    } else ctx.response.body = setMessage(2, 'Request is not in JSON format');
+    });
+
+    for (const route in routesWithoutLogin) router.post(route, async (ctx: any) => {
+        if (ctx.request.body().type === 'json') {
+            await processPost(routesWithoutLogin, route, ctx);
+        } else ctx.response.body = setMessage(2, 'Request is not in JSON format');
+    });
 }
 
 function processStaticFiles(router: Router) {
  router.get('/:path*', async (ctx: any) => {
   const webRoot: string = Deno.cwd() + '/web';
   try {
-   let path = ctx.request.url.pathname;
-   if (path.slice(-1) == '/') path += 'index.html';
-   else if (! await exists(webRoot + path)) path = path.substring(0, path.lastIndexOf('/')) + '/index.html';
-   await send(ctx, path, { root: webRoot });
-  } catch {
-   await send(ctx, 'notfound.html', { root: webRoot });
-  }
+        let path = ctx.request.url.pathname;
+        if (path.slice(-6) == 'admin/') path += 'index.html';
+        else if (path.slice(-12) == 'unsubscribe/') path += 'index.html';
+        else if (path.slice(-1) == '/') path += 'admin/html/login.html';
+        if (! await exists(webRoot + path)) 
+            path = path.substring(0, path.lastIndexOf('/')) + '/index.html';
+        await send(ctx, path, { root: webRoot });
+    } catch (e) {
+        //console.log(e);
+        await send(ctx, 'notfound.html', { root: webRoot });
+    }
  });
 }
+
+async function processPost(routes: any,route:string, ctx: any){
+    const body = ctx.request.body({ type: 'json', limit: 500000000 });
+    ctx.response.body = await routes[route]({
+        body: await body.value,
+        ip: ctx.request.ip
+    });
+}
+
+async function isLogged(ctx: any){
+    const headers = await ctx.request.headers;
+    if(headers.has("auth")){
+        try{
+            const payload = await verify(headers.get("auth"), jwtKey); //verify jwt
+            //console.log(payload); 
+            return null;
+        } catch{
+
+        }
+    }
+    return setMessage(401, 'Not authorized');
+}
+
+async function apiLogin(req: any){
+    if(req.body && req.body.username == "admin" && req.body.password == "123456")
+    {
+        const auth = await create({ alg: "HS512", typ: "JWT" }, { user: req.body.username }, jwtKey);
+        return setMessage(1,auth); 
+    }
+    return setMessage(401, 'Not authorized');
+}
+
 
 async function apiUnsubscribe(req: any) {
  req.body.email = req.body.email.trim();
@@ -351,11 +402,11 @@ async function apiAdminDeleteQueue(req: any) {
 }
 
 async function apiAdminDeleteQueueCampaign(req: any) {
- if (!isFilled(req.body, 'id_campaign')) return setMessage(2, 'Campaign ID is missing');
- const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id_campaign ]);
- if (cnt[0].cnt != 1) return setMessage(2, 'The campaign with the provided ID is not in queue');
+ if (!isFilled(req.body, 'id')) return setMessage(2, 'Campaign ID is missing');
+ const cnt = await dbQuery('SELECT COUNT(*) AS cnt FROM queue WHERE id_campaign = ?', [ req.body.id ]);
+ if (cnt[0].cnt == 0) return setMessage(2, 'The campaign with the provided ID is not in queue');
  if (isFilled(req.body, 'status')) {
-  await dbQuery('DELETE FROM queue WHERE id_campaign = ? AND status = ?', [ req.body.id_campaign, req.body.status ]);
+  await dbQuery('DELETE FROM queue WHERE id_campaign = ? AND status = ?', [ req.body.id, req.body.status ]);
   return setMessage(1, 'Campaign messages with the provided status code deleted from queue');
  } else {
   await dbQuery('DELETE FROM queue WHERE id_campaign = ?', [ req.body.id ]);
@@ -382,6 +433,7 @@ async function dbConnect() {
    username: settings.mysql.user,
    db: settings.mysql.database,
    password: settings.mysql.password,
+   debug: false
   });
  } catch {
   setLog('Error: Could not connect to the MySQL server.');

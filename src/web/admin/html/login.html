@@ -1,1 +1,26 @@
-login
+<!DOCTYPE html>
+<html>
+ <head>
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./admin/style.css" type="text/css" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <script src="./admin/functions.js"></script>
+ </head>
+ <body>
+  <div id="content">
+    <h1>Log In</h1>
+    <form method="POST" onsubmit="login(document.getElementById('username').value, document.getElementById('password').value); return false;">
+        <label> Username:<br>
+            <input name="username" type="text" id="username">
+        </label><br> 
+        <label>
+            Password:<br>
+            <input name="password" type="password" id="password"> 
+        </label> <br>
+        <button type="submit">Submit</button> 
+    </form>    
+  </div>
+ </body>
+</html>
